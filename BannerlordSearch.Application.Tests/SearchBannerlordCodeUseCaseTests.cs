@@ -5,385 +5,179 @@ using Xunit;
 
 namespace BannerlordSearch.Application.Tests;
 
-/// <summary>
-/// Tests for the <see cref="SearchBannerlordCodeUseCase"/> class.
-/// </summary>
 public class SearchBannerlordCodeUseCaseTests
 {
-    /// <summary>
-    /// Verifies that the <see cref="SearchBannerlordCodeUseCase"/> can be instantiated successfully.
-    /// </summary>
-    [Fact]
-    public void SearchBannerlordCodeUseCase_CanBeInstantiated()
+    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
+        new() { FilePath = filePath, Lines = lines };
+
+    private static Mock<ICodeIndex> EmptyIndex()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mock = new Mock<ICodeIndex>();
+        mock.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
+        return mock;
+    }
 
-        // Act
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
+    private static Mock<ICodeIndex> IndexWith(params IndexedFile[] files)
+    {
+        var mock = new Mock<ICodeIndex>();
+        mock.Setup(ci => ci.Files).Returns(files.ToList());
+        return mock;
+    }
 
-        // Assert
+    [Fact]
+    public void CanBeInstantiated()
+    {
+        var useCase = new SearchBannerlordCodeUseCase(new Mock<ICodeIndex>().Object);
         Assert.NotNull(useCase);
     }
 
-    /// <summary>
-    /// Verifies that the constructor properly validates its parameters and throws
-    /// <see cref="ArgumentNullException"/> when the repository is null.
-    /// </summary>
     [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenRepositoryIsNull()
+    public void Constructor_ThrowsArgumentNullException_WhenCodeIndexIsNull()
     {
-        // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
-        
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new SearchBannerlordCodeUseCase(null, mockFileSystem.Object));
+        Assert.Throws<ArgumentNullException>(() => new SearchBannerlordCodeUseCase(null!));
     }
 
-    /// <summary>
-    /// Verifies that the constructor properly validates its parameters and throws
-    /// <see cref="ArgumentNullException"/> when the file system is null.
-    /// </summary>
     [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenFileSystemIsNull()
+    public void Execute_ThrowsArgumentNullException_WhenRegexpIsNull()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new SearchBannerlordCodeUseCase(mockRepository.Object, null));
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
+        Assert.Throws<ArgumentNullException>(() => useCase.Execute(null!, "path", 1000, 10));
     }
 
-    /// <summary>
-    /// Verifies that the Execute method returns an empty list when the root path does not exist.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_ReturnsEmptyList_WhenRootPathDoesNotExist()
+    public void Execute_ThrowsArgumentNullException_WhenRegexpIsEmpty()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "nonexistent_path";
-        var regexp = "test";
-        var maxResults = 1000;
-        var contextLines = 10;
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
+        Assert.Throws<ArgumentNullException>(() => useCase.Execute("", "path", 1000, 10));
+    }
 
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(false);
+    [Fact]
+    public void Execute_ReturnsEmptyList_WhenIndexHasNoFiles()
+    {
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("test", "any_path", 1000, 10);
 
-        // Assert
         Assert.NotNull(results);
         Assert.Empty(results);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method returns results when valid input is provided.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_ReturnsResults_WhenValidInputProvided()
+    public void Execute_ReturnsEmptyList_WhenNoFilesMatchPattern()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 1000;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[] { "class TestClass { }" });
+        var mockIndex = IndexWith(MakeFile("test.cs", "class SomeOtherClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("TestClass", "valid_path", 1000, 10);
 
-        // Assert
+        Assert.NotNull(results);
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public void Execute_ReturnsResults_WhenPatternMatchesContent()
+    {
+        var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+
+        var results = useCase.Execute("TestClass", "valid_path", 1000, 10);
+
         Assert.NotNull(results);
         Assert.NotEmpty(results);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles file reading exceptions gracefully.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesFileReadingExceptions()
+    public void Execute_StopsAndReturnsTotalResult_WhenMaxResultsIsNegative()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 1000;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Throws(new IOException("File access error"));
+        var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("TestClass", "valid_path", -1, 10);
 
-        // Assert
-        Assert.NotNull(results);
-        // Should not crash and return empty results or minimal results
-        // The method should handle exceptions gracefully and return empty list or a limit result
-        // With file reading exceptions, we might get a limit result indicating no matches
-        Assert.True(results.Count <= 1);
-        // If we get a result, it should be a limit result or total matches result
-        if (results.Count > 0)
-        {
-            Assert.Contains("\nTotal matches for", results[0].CodeLine);
-        }
-    }
-
-    /// <summary>
-    /// Verifies that the Execute method handles null regex pattern correctly.
-    /// </summary>
-    [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesNullRegexPattern()
-    {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = (string)null;
-        var maxResults = 1000;
-        var contextLines = 10;
-        
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => useCase.Execute(regexp, rootPath, maxResults, contextLines));
-    }
-
-    /// <summary>
-    /// Verifies that the Execute method handles negative max results correctly.
-    /// </summary>
-    [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesNegativeMaxResults()
-    {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = -1;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[] { "class TestClass { }" });
-
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
-
-        // Assert
-        Assert.NotNull(results);
-        // With negative maxResults, we expect a result indicating the limit was reached
         Assert.Single(results);
         Assert.Contains("\nTotal matches for", results[0].CodeLine);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles zero max results correctly.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesZeroMaxResults()
+    public void Execute_StopsAndReturnsTotalResult_WhenMaxResultsIsZero()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 0;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[] { "class TestClass { }" });
+        var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("TestClass", "valid_path", 0, 10);
 
-        // Assert
-        Assert.NotNull(results);
-        // With zero maxResults, we expect a result indicating the limit was reached
         Assert.Single(results);
         Assert.Contains("\nTotal matches for", results[0].CodeLine);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles context lines correctly.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesContextLines()
+    public void Execute_IncludesContextLines_AroundMatches()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 1000;
-        var contextLines = 2;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[]
-        {
+        var mockIndex = IndexWith(MakeFile("test.cs",
             "namespace TestNamespace",
             "{",
             "    public class TestClass",
             "    {",
             "        public void Foo() { }",
             "    }",
-            "}"
-        });
+            "}"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("TestClass", "valid_path", 1000, 2);
 
-        // Assert
-        Assert.NotNull(results);
         Assert.NotEmpty(results);
-        // Should include context lines around matches
         Assert.Contains(results, r => r.ContextBefore.Count > 0 || r.ContextAfter.Count > 0);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method respects the maximum results limit.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_RespectsMaxResultsLimit()
+    public void Execute_RespectsMaxResultsLimit()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 1;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test1.cs", "test2.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test1.cs")).Returns(new string[] { "class TestClass { }" });
-        mockRepository.Setup(r => r.ReadAllLines("test2.cs")).Returns(new string[] { "class TestClass { }" });
+        var mockIndex = IndexWith(
+            MakeFile("test1.cs", "class TestClass { }"),
+            MakeFile("test2.cs", "class TestClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        var results = useCase.Execute("TestClass", "valid_path", 1, 10);
 
-        // Assert
-        Assert.NotNull(results);
-        // Should respect the limit and not exceed maxResults
-        // The implementation adds a total result line at the end, so we expect at most maxResults + 1
-        Assert.True(results.Count <= maxResults + 1);
+        // At most 1 match result + 1 total summary line
+        Assert.True(results.Count <= 2);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles empty regex patterns correctly.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesEmptyRegexPattern()
+    public void Execute_HandlesLargeMaxResults()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "";
-        var maxResults = 1000;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[] { "class TestClass { }" });
+        var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => useCase.Execute(regexp, rootPath, maxResults, contextLines));
-    }
+        var results = useCase.Execute("TestClass", "valid_path", int.MaxValue, 10);
 
-    /// <summary>
-    /// Verifies that the Execute method handles very large max results correctly.
-    /// </summary>
-    [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesLargeMaxResults()
-    {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = int.MaxValue;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test.cs")).Returns(new string[] { "class TestClass { }" });
-
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
-
-        // Assert
         Assert.NotNull(results);
         Assert.NotEmpty(results);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles edge case with exact match limit.
-    /// </summary>
     [Fact]
-    public void SearchBannerlordCodeUseCase_Execute_HandlesExactMatchLimit()
+    public void Execute_CallsEnsureBuilt_WithRootPath()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        
-        var rootPath = "valid_path";
-        var regexp = "TestClass";
-        var maxResults = 2;
-        var contextLines = 10;
-        
-        // Setup mocks
-        mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
-        mockRepository.Setup(r => r.GetCsFiles(rootPath)).Returns(new List<string> { "test1.cs", "test2.cs", "test3.cs" });
-        mockRepository.Setup(r => r.ReadAllLines("test1.cs")).Returns(new string[] { "class TestClass { }" });
-        mockRepository.Setup(r => r.ReadAllLines("test2.cs")).Returns(new string[] { "class TestClass { }" });
-        mockRepository.Setup(r => r.ReadAllLines("test3.cs")).Returns(new string[] { "class TestClass { }" });
+        var mockIndex = EmptyIndex();
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
-        // Act
-        var results = useCase.Execute(regexp, rootPath, maxResults, contextLines);
+        useCase.Execute("test", "my_root_path", 1000, 10);
 
-        // Assert
-        Assert.NotNull(results);
-        // Should respect the limit and not exceed maxResults
-        Assert.True(results.Count <= maxResults + 1); // +1 for total result line
+        mockIndex.Verify(ci => ci.EnsureBuilt("my_root_path"), Times.Once);
+    }
+
+    [Fact]
+    public void Execute_SetsLocationToNamespace_WhenNamespacePresent()
+    {
+        var mockIndex = IndexWith(MakeFile("test.cs",
+            "namespace TaleWorlds.Core;",
+            "public class ItemObject { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+
+        var results = useCase.Execute("ItemObject", "valid_path", 1000, 0);
+
+        var matchResult = results.FirstOrDefault(r => r.CodeLine.Contains("ItemObject") && !r.CodeLine.StartsWith("\n"));
+        Assert.NotNull(matchResult);
+        Assert.Equal("TaleWorlds.Core", matchResult!.Location);
     }
 }

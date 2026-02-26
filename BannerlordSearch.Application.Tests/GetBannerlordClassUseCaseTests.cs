@@ -5,227 +5,139 @@ using Xunit;
 
 namespace BannerlordSearch.Application.Tests;
 
-/// <summary>
-/// Tests for the <see cref="GetBannerlordClassUseCase"/> class.
-/// </summary>
 public class GetBannerlordClassUseCaseTests
 {
-    /// <summary>
-    /// Verifies that the <see cref="GetBannerlordClassUseCase"/> can be instantiated successfully.
-    /// </summary>
-    [Fact]
-    public void GetBannerlordClassUseCase_CanBeInstantiated()
+    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
+        new() { FilePath = filePath, Lines = lines };
+
+    private static (Mock<ICodeIndex> index, Mock<IBannerlordSourcePathProvider> provider) MakeMocks(
+        string rootPath = "valid_path")
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
+        var index = new Mock<ICodeIndex>();
+        var provider = new Mock<IBannerlordSourcePathProvider>();
+        provider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(rootPath);
+        return (index, provider);
+    }
 
-        // Act
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-
-        // Assert
+    [Fact]
+    public void CanBeInstantiated()
+    {
+        var (index, provider) = MakeMocks();
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
         Assert.NotNull(useCase);
     }
 
-    /// <summary>
-    /// Verifies that the constructor properly validates its parameters and throws
-    /// <see cref="ArgumentNullException"/> when the repository is null.
-    /// </summary>
     [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenRepositoryIsNull()
+    public void Constructor_ThrowsArgumentNullException_WhenCodeIndexIsNull()
     {
-        // Arrange
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(null, mockSourceProvider.Object, mockFileSystem.Object));
+        var provider = new Mock<IBannerlordSourcePathProvider>();
+        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(null!, provider.Object));
     }
 
-    /// <summary>
-    /// Verifies that the constructor properly validates its parameters and throws
-    /// <see cref="ArgumentNullException"/> when the source provider is null.
-    /// </summary>
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenSourceProviderIsNull()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(mockRepository.Object, null, mockFileSystem.Object));
+        var index = new Mock<ICodeIndex>();
+        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(index.Object, null!));
     }
 
-    /// <summary>
-    /// Verifies that the constructor properly validates its parameters and throws
-    /// <see cref="ArgumentNullException"/> when the file system is null.
-    /// </summary>
-    [Fact]
-    public void Constructor_ThrowsArgumentNullException_WhenFileSystemIsNull()
-    {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, null));
-    }
-
-    /// <summary>
-    /// Verifies that the Execute method returns an error when the class name is null.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsNull()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
+        var (index, provider) = MakeMocks();
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Act
-        var result = useCase.Execute(null);
+        var result = useCase.Execute(null!);
 
-        // Assert
         Assert.StartsWith("[Error]", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method returns an error when the class name is empty.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsEmpty()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
+        var (index, provider) = MakeMocks();
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Act
         var result = useCase.Execute(string.Empty);
 
-        // Assert
         Assert.StartsWith("[Error]", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method returns an error when the class is not found in the file system.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsError_WhenClassNotFound()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "NonExistentClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass(It.IsAny<string>())).Returns((IndexedFile?)null);
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        mockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        mockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(false);
-        mockRepository.Setup(r => r.GetCsFiles("valid_path")).Returns(new List<string>());
+        var result = useCase.Execute("NonExistentClass");
 
-        // Act
-        var result = useCase.Execute(className);
-
-        // Assert
         Assert.StartsWith("[Error]", result);
     }
 
-   /// <summary>
-   /// Verifies that the Execute method returns the class source when the class is found in the file system.
-   /// </summary>
-   [Fact]
-   public void Execute_ReturnsClassSource_WhenClassFoundInFileSystem()
-   {
-       // Arrange
-       var mockRepository = new Mock<ISymbolSearchRepository>();
-       var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-       var mockFileSystem = new Mock<IFileSystem>();
-       var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-       var className = "TestNamespace.TestClass";
-
-       // Setup mocks
-       mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-       var expectedPath = Path.Combine("valid_path", "TestNamespace", "TestClass.cs");
-       mockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-       mockFileSystem.Setup(fs => fs.FileExists(expectedPath)).Returns(true);
-       mockFileSystem.Setup(fs => fs.ReadAllLines(expectedPath)).Returns(new[] { "namespace TestNamespace", "{", "    class TestClass { }", "}" });
-
-       // Act
-       var result = useCase.Execute(className);
-
-       // Assert
-       // The implementation should return the class content, not an error
-       // If it returns an error, that's a bug in the implementation
-       Assert.Contains("class TestClass", result);
-       Assert.DoesNotContain("[Error]", result);
-   }
-
-    /// <summary>
-    /// Verifies that the Execute method handles invalid line ranges correctly.
-    /// </summary>
     [Fact]
-    public void Execute_ReturnsError_WhenInvalidLineRangeProvided()
+    public void Execute_ReturnsClassSource_WhenClassFound()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestNamespace.TestClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace",
+                "{",
+                "    class TestClass { }",
+                "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        mockFileSystem.Setup(fs => fs.DirectoryExists("valid_path/TestNamespace")).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists("valid_path/TestNamespace/TestClass.cs")).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines("valid_path/TestNamespace/TestClass.cs")).Returns(new[] { "namespace TestNamespace", "{", "    class TestClass { }", "}" });
+        var result = useCase.Execute("TestNamespace.TestClass");
 
-        // Act
-        var result = useCase.Execute(className, startLine: 5, endLine: 3);
+        Assert.Contains("class TestClass", result);
+        Assert.DoesNotContain("[Error]", result);
+    }
 
-        // Assert
+    [Fact]
+    public void Execute_ReturnsClassSource_WhenClassHasNoNamespace()
+    {
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestClass"))
+            .Returns(MakeFile("TestClass.cs", "class TestClass { }"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
+
+        var result = useCase.Execute("TestClass");
+
+        Assert.Contains("class TestClass", result);
+        Assert.DoesNotContain("[Error]", result);
+    }
+
+    [Fact]
+    public void Execute_ReturnsError_WhenStartLineGreaterThanEndLine()
+    {
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace", "{", "    class TestClass { }", "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
+
+        var result = useCase.Execute("TestNamespace.TestClass", startLine: 5, endLine: 3);
+
         Assert.StartsWith("[Error]", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method returns a specific line range when valid parameters are provided.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsSpecificLineRange_WhenValidLineRangeProvided()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestNamespace.TestClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace",
+                "{",
+                "    public class TestClass",
+                "    {",
+                "        public void Foo() { }",
+                "    }",
+                "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        var expectedPath = Path.Combine("valid_path", "TestNamespace", "TestClass.cs");
-        mockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists(expectedPath)).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines(expectedPath)).Returns(new[]
-        {
-            "namespace TestNamespace",
-            "{",
-            "    public class TestClass",
-            "    {",
-            "        public void Foo() { }",
-            "    }",
-            "}"
-        });
+        var result = useCase.Execute("TestNamespace.TestClass", startLine: 3, endLine: 5);
 
-        // Act
-        var result = useCase.Execute(className, startLine: 3, endLine: 5);
-
-        // Assert
         Assert.DoesNotContain("[Error]", result);
         Assert.Contains("public class TestClass", result);
         Assert.Contains("public void Foo", result);
@@ -234,39 +146,23 @@ public class GetBannerlordClassUseCaseTests
         Assert.DoesNotContain("}", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles edge case with single line range.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsSingleLine_WhenSingleLineRangeProvided()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestNamespace.TestClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace",
+                "{",
+                "    public class TestClass",
+                "    {",
+                "        public void Foo() { }",
+                "    }",
+                "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        var expectedPath = Path.Combine("valid_path", "TestNamespace", "TestClass.cs");
-        mockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists(expectedPath)).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines(expectedPath)).Returns(new[]
-        {
-            "namespace TestNamespace",
-            "{",
-            "    public class TestClass",
-            "    {",
-            "        public void Foo() { }",
-            "    }",
-            "}"
-        });
+        var result = useCase.Execute("TestNamespace.TestClass", startLine: 3, endLine: 3);
 
-        // Act
-        var result = useCase.Execute(className, startLine: 3, endLine: 3);
-
-        // Assert
         Assert.DoesNotContain("[Error]", result);
         Assert.Contains("public class TestClass", result);
         Assert.DoesNotContain("namespace TestNamespace", result);
@@ -274,101 +170,43 @@ public class GetBannerlordClassUseCaseTests
         Assert.DoesNotContain("}", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles line range beyond file size.
-    /// </summary>
     [Fact]
     public void Execute_ReturnsError_WhenLineRangeExceedsFileSize()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestNamespace.TestClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace", "{", "    class TestClass { }", "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        mockFileSystem.Setup(fs => fs.DirectoryExists("valid_path/TestNamespace")).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists("valid_path/TestNamespace/TestClass.cs")).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines("valid_path/TestNamespace/TestClass.cs")).Returns(new[]
-        {
-            "namespace TestNamespace",
-            "{",
-            "    public class TestClass",
-            "    {",
-            "        public void Foo() { }",
-            "    }",
-            "}"
-        });
+        var result = useCase.Execute("TestNamespace.TestClass", startLine: 1, endLine: 10);
 
-        // Act
-        var result = useCase.Execute(className, startLine: 1, endLine: 10);
-
-        // Assert
         Assert.StartsWith("[Error]", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles edge case with large line range.
-    /// </summary>
     [Fact]
-    public void Execute_ReturnsWholeFile_WhenLargeLineRangeProvided()
+    public void Execute_ReturnsError_WhenLargeEndLineExceedsFileSize()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestNamespace.TestClass";
+        var (index, provider) = MakeMocks();
+        index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
+            .Returns(MakeFile("TestClass.cs",
+                "namespace TestNamespace", "{", "    class TestClass { }", "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        mockFileSystem.Setup(fs => fs.DirectoryExists("valid_path/TestNamespace")).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists("valid_path/TestNamespace/TestClass.cs")).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines("valid_path/TestNamespace/TestClass.cs")).Returns(new[]
-        {
-            "namespace TestNamespace",
-            "{",
-            "    public class TestClass",
-            "    {",
-            "        public void Foo() { }",
-            "    }",
-            "}"
-        });
+        var result = useCase.Execute("TestNamespace.TestClass", startLine: 1, endLine: int.MaxValue);
 
-        // Act
-        var result = useCase.Execute(className, startLine: 1, endLine: int.MaxValue);
-
-        // Assert
         Assert.StartsWith("[Error]", result);
     }
 
-    /// <summary>
-    /// Verifies that the Execute method handles class name with no namespace.
-    /// </summary>
     [Fact]
-    public void Execute_ReturnsClassSource_WhenClassHasNoNamespace()
+    public void Execute_CallsEnsureBuilt_WithRootPath()
     {
-        // Arrange
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new GetBannerlordClassUseCase(mockRepository.Object, mockSourceProvider.Object, mockFileSystem.Object);
-        var className = "TestClass";
+        var (index, provider) = MakeMocks("my_root_path");
+        index.Setup(ci => ci.FindClass(It.IsAny<string>())).Returns((IndexedFile?)null);
+        var useCase = new GetBannerlordClassUseCase(index.Object, provider.Object);
 
-        // Setup mocks
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("valid_path");
-        var expectedPath = Path.Combine("valid_path", "TestClass.cs");
-        mockFileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        mockFileSystem.Setup(fs => fs.FileExists(expectedPath)).Returns(true);
-        mockFileSystem.Setup(fs => fs.ReadAllLines(expectedPath)).Returns(new[] { "class TestClass { }" });
+        useCase.Execute("SomeClass");
 
-        // Act
-        var result = useCase.Execute(className);
-
-        // Assert
-        Assert.Contains("class TestClass", result);
-        Assert.False(result.StartsWith("[Error]"));
+        index.Verify(ci => ci.EnsureBuilt("my_root_path"), Times.Once);
     }
 }

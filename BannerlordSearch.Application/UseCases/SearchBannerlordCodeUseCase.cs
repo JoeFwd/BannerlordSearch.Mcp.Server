@@ -1,112 +1,71 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using BannerlordSearch.Domain;
- 
+
 namespace BannerlordSearch.Application.UseCases;
- 
+
 /// <summary>
 /// Use case for searching Bannerlord code using regular expressions.
+/// Delegates to <see cref="ICodeIndex"/> so that all file content is searched in-memory
+/// rather than read from disk on every call.
 /// </summary>
 public class SearchBannerlordCodeUseCase
 {
-    private readonly ISymbolSearchRepository _fileRepository;
-    private readonly IFileSystem _fileSystem;
- 
-    public SearchBannerlordCodeUseCase(ISymbolSearchRepository fileRepository, IFileSystem fileSystem)
+    private readonly ICodeIndex _codeIndex;
+
+    public SearchBannerlordCodeUseCase(ICodeIndex codeIndex)
     {
-        _fileRepository = fileRepository ?? throw new ArgumentNullException(nameof(fileRepository));
-        _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        _codeIndex = codeIndex ?? throw new ArgumentNullException(nameof(codeIndex));
     }
- 
+
     /// <summary>
-    ///     Searches all .cs files under <paramref name="rootPath" /> for the given <paramref name="regexp" />.
-    ///     This method is used internally by the MCP tool to perform regexp searches in Bannerlord decompiled source code.
-    ///     It's optimized for performance with parallel processing and caching of file lists.
+    /// Searches all indexed .cs files under <paramref name="rootPath"/> for the given <paramref name="regexp"/>.
+    /// The index is built on first call and reused on subsequent calls.
     /// </summary>
-    /// <param name="regexp">The regexp to look for (required). Can be a class name, method name, property name, or variable name.</param>
-    /// <param name="rootPath">Folder containing decompiled Bannerlord sources. This should point to the root directory of the decompiled Bannerlord source tree.</param>
-    /// <param name="maxResults">Maximum number of results to return (int.MaxValue = unlimited). Default is 1000.</param>
-    /// <param name="contextLines">Number of context lines to include before/after each match. Default is 10.</param>
-    /// <returns>A list of search results with detailed information including location, code snippet, and context lines.</returns>
-    /// <remarks>
-    ///     This method is designed for:
-    ///     - Rapid exploration of Bannerlord source code
-    ///     - Modding development to understand existing implementations
-    ///     - Finding specific code elements in large codebases
-    ///
-    ///     Performance considerations:
-    ///     - Uses parallel processing for faster search across multiple files
-    ///     - Caches file lists to avoid repeated directory scans
-    ///     - Stops searching early when maxResults is reached
-    /// </remarks>
     public virtual List<SearchResult> Execute(string regexp, string rootPath, int maxResults, int contextLines)
     {
-        var results = new List<SearchResult>();
         if (string.IsNullOrEmpty(regexp))
             throw new ArgumentNullException(nameof(regexp));
-            
-        if (!_fileSystem.DirectoryExists(rootPath))
-        {
-            // In a real implementation, this should probably throw an exception or log the error
-            return results;
-        }
+
+        _codeIndex.EnsureBuilt(rootPath);
+
+        var files = _codeIndex.Files;
+        if (files.Count == 0)
+            return new List<SearchResult>();
 
         var symbolRegex = new Regex(regexp, RegexOptions.Compiled);
-        var classRegex = new Regex(@"\bclass\s+(\w+)", RegexOptions.Compiled);
-        // Simplified method regex to capture method name before '('.
-        var methodRegex = new Regex(@"\b(\w+)\s*\(", RegexOptions.Compiled);
-        var namespaceRegex = new Regex(@"namespace\s+([\w\.]+)", RegexOptions.Compiled);
-
-        // Use repository to retrieve (and cache) file list for faster repeated searches
-        var csFiles = _fileRepository.GetCsFiles(rootPath);
         var resultsBag = new ConcurrentBag<SearchResult>();
-        int matchCountLocal = 0; // thread-safe counter
+        int matchCountLocal = 0;
 
         var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        Parallel.ForEach(csFiles, parallelOptions, (file, state) =>
+        Parallel.ForEach(files, parallelOptions, (indexedFile, state) =>
         {
-            string[] lines;
-            try
-            {
-                lines = _fileRepository.ReadAllLines(file);
-            }
-            catch (Exception)
-            {
-                // In a real implementation, this should probably log the error
-                return;
-            }
-
-            string currentClass = string.Empty;
+            var lines = indexedFile.Lines;
             string currentMethod = string.Empty;
             string currentNamespace = string.Empty;
             var beforeBuffer = new Queue<string>();
 
             for (int i = 0; i < lines.Length; i++)
             {
-                var classMatch = classRegex.Match(lines[i]);
-                if (classMatch.Success)
+                var trimmed = lines[i].Trim();
+
+                if (trimmed.StartsWith("namespace ", StringComparison.Ordinal))
                 {
-                    currentClass = classMatch.Groups[1].Value;
-                    currentMethod = string.Empty;
+                    var ns = trimmed.Substring("namespace ".Length).Trim();
+                    ns = ns.Split('{')[0].Trim().TrimEnd(';').Trim();
+                    if (!string.IsNullOrEmpty(ns)) currentNamespace = ns;
                 }
 
-                var methodMatch = methodRegex.Match(lines[i]);
+                if (Regex.IsMatch(trimmed, @"\bclass\s+\w+"))
+                    currentMethod = string.Empty;
+
+                var methodMatch = Regex.Match(trimmed, @"\b(\w+)\s*\(");
                 if (methodMatch.Success)
                     currentMethod = methodMatch.Groups[1].Value;
-                // Simple namespace detection
-                if (lines[i].StartsWith("namespace "))
-                {
-                    var ns = lines[i].Substring("namespace ".Length).Trim();
-                    // Remove any trailing opening brace or whitespace
-                    ns = ns.Split('{')[0].Trim();
-                    currentNamespace = ns;
-                }
 
                 if (symbolRegex.IsMatch(lines[i]))
                 {
                     int currentMatch = Interlocked.Increment(ref matchCountLocal);
-
-                    // Early exit if limit reached
                     if (currentMatch > maxResults)
                     {
                         state.Stop();
@@ -121,19 +80,15 @@ public class SearchBannerlordCodeUseCase
                             contextAfter.Add(lines[i + j].Trim());
                     }
 
-                    // Location should be only the namespace (or <global> if none)
                     string location = !string.IsNullOrEmpty(currentNamespace) ? currentNamespace : "<global>";
-
-                    var result = new SearchResult
+                    resultsBag.Add(new SearchResult
                     {
                         Location = location,
                         Method = !string.IsNullOrEmpty(currentMethod) ? currentMethod : string.Empty,
                         CodeLine = lines[i].Trim(),
                         ContextBefore = contextBefore,
                         ContextAfter = contextAfter
-                    };
-
-                    resultsBag.Add(result);
+                    });
 
                     beforeBuffer.Clear();
                 }
@@ -141,7 +96,7 @@ public class SearchBannerlordCodeUseCase
                 {
                     if (contextLines > 0)
                     {
-                        beforeBuffer.Enqueue(lines[i].Trim());
+                        beforeBuffer.Enqueue(trimmed);
                         if (beforeBuffer.Count > contextLines)
                             beforeBuffer.Dequeue();
                     }
@@ -149,31 +104,10 @@ public class SearchBannerlordCodeUseCase
             }
         });
 
-        results.AddRange(resultsBag);
-        // Add total matches result only if we have results
+        var results = new List<SearchResult>(resultsBag);
         if (matchCountLocal > 0)
-        {
-            AddTotalResult(results, regexp, matchCountLocal);
-        }
+            results.Add(new SearchResult { CodeLine = $"\nTotal matches for \"{regexp}\": {matchCountLocal}" });
+
         return results;
-    }
-
-    private static void AddLimitResult(ConcurrentBag<SearchResult> bag, int maxResults, int currentMatch,
-        ParallelLoopState state)
-    {
-        var limitResult = new SearchResult
-        {
-            CodeLine = $"\nReached max result limit of {maxResults}. Stopping search."
-        };
-        bag.Add(limitResult);
-        state.Stop();
-    }
-
-    private static void AddTotalResult(List<SearchResult> results, string regexp, int total)
-    {
-        results.Add(new SearchResult
-        {
-            CodeLine = $"\nTotal matches for \"{regexp}\": {total}"
-        });
     }
 }

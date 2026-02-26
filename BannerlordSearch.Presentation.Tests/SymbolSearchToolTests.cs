@@ -1,5 +1,5 @@
-using BannerlordSearch.Domain;
 using BannerlordSearch.Application.UseCases;
+using BannerlordSearch.Domain;
 using Moq;
 using Xunit;
 
@@ -7,49 +7,36 @@ namespace BannerlordSearch.Presentation.Tests;
 
 public class SymbolSearchToolTests
 {
+    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
+        new() { FilePath = filePath, Lines = lines };
+
     [Fact]
     public void SymbolSearchTool_CanBeInstantiated()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(mockRepository.Object, mockFileSystem.Object);
-         
-        // Act
-        // We can't easily instantiate the tool since it's decorated with attributes
-        // but we can test the constructor parameters are correct
-         
-        // Assert
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
+
         Assert.NotNull(mockSearchUseCase.Object);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpIsNull()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(mockRepository.Object, mockFileSystem.Object);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, mockSearchUseCase.Object);
-        
-        // Act & Assert
-        var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode(null, 1000, 10));
+
+        var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode(null!, 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpIsEmpty()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(mockRepository.Object, mockFileSystem.Object);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, mockSearchUseCase.Object);
-        
-        // Act & Assert
+
         var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode("", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
@@ -57,186 +44,98 @@ public class SymbolSearchToolTests
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpContainsOnlyWhitespace()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(mockRepository.Object, mockFileSystem.Object);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, mockSearchUseCase.Object);
-        
-        // Act & Assert
+
         var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode("   ", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_CallsUseCaseWithCorrectParameters()
+    public void SymbolSearchTool_SearchBannerlordCode_CallsSourceProvider_ForRootPath()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
+        var mockCodeIndex = new Mock<ICodeIndex>();
+        mockCodeIndex.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
+        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("expected_root_path");
+        var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, useCase);
-        
-        var regexp = "TestClass";
-        var maxResults = 500;
-        var contextLines = 5;
-        var expectedRootPath = "expected_root_path";
-        
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockRepository.Setup(r => r.GetCsFiles(It.IsAny<string>()))
-            .Returns(new List<string>());
-        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
+
+        var result = tool.SearchBannerlordCode("TestClass", 500, 5);
+
         mockSourceProvider.Verify(p => p.GetBannerlordSourceFolderPath(), Times.Once);
         Assert.NotNull(result);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_PassesCorrectRootPath()
+    public void SymbolSearchTool_SearchBannerlordCode_ReturnsEmptyList_WhenNoFilesIndexed()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
+        var mockCodeIndex = new Mock<ICodeIndex>();
+        mockCodeIndex.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
+        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("expected_root_path");
+        var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, useCase);
-        
-        var regexp = "TestClass";
-        var maxResults = 500;
-        var contextLines = 5;
-        var expectedRootPath = "expected_root_path";
-        
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockRepository.Setup(r => r.GetCsFiles(It.IsAny<string>()))
-            .Returns(new List<string>());
-        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
-        mockSourceProvider.Verify(p => p.GetBannerlordSourceFolderPath(), Times.Once);
-        Assert.NotNull(result);
-    }
 
-    [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_HandlesEmptyResultFromUseCase()
-    {
-        // Arrange
-        var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
-        var tool = new SymbolSearchTool(mockSourceProvider.Object, useCase);
-        
-        var regexp = "TestClass";
-        var maxResults = 500;
-        var contextLines = 5;
-        var expectedRootPath = "expected_root_path";
-        
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockRepository.Setup(r => r.GetCsFiles(It.IsAny<string>()))
-            .Returns(new List<string>());
-        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
+        var result = tool.SearchBannerlordCode("TestClass", 500, 5);
+
         Assert.NotNull(result);
         Assert.Empty(result);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_HandlesNonEmptyResultFromUseCase()
+    public void SymbolSearchTool_SearchBannerlordCode_ReturnsResults_WhenMatchFound()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
+        var mockCodeIndex = new Mock<ICodeIndex>();
+        mockCodeIndex.Setup(ci => ci.Files)
+            .Returns(new List<IndexedFile> { MakeFile("test.cs", "Found TestClass") });
+        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("expected_root_path");
+        var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, useCase);
-        
-        var regexp = "TestClass";
-        var maxResults = 500;
-        var contextLines = 5;
-        var expectedRootPath = "expected_root_path";
-        var searchResult = new SearchResult { CodeLine = "Found TestClass" };
-        
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockRepository.Setup(r => r.GetCsFiles(It.IsAny<string>()))
-            .Returns(new List<string> { "test.cs" });
-        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
-        mockFileSystem.Setup(f => f.ReadAllLines(It.IsAny<string>()))
-            .Returns(new string[] { "Found TestClass" });
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
+
+        var result = tool.SearchBannerlordCode("TestClass", 500, 5);
+
         Assert.NotNull(result);
         Assert.NotEmpty(result);
-        Assert.Contains(searchResult, result);
+        Assert.Contains(result, r => r.CodeLine == "Found TestClass");
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_WithZeroMaxResults_ReturnsExpectedResult()
+    public void SymbolSearchTool_SearchBannerlordCode_WithZeroMaxResults_ReturnsTotalSummary()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var useCase = new SearchBannerlordCodeUseCase(mockRepository.Object, mockFileSystem.Object);
+        var mockCodeIndex = new Mock<ICodeIndex>();
+        mockCodeIndex.Setup(ci => ci.Files)
+            .Returns(new List<IndexedFile> { MakeFile("test.cs", "Found TestClass") });
+        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("expected_root_path");
+        var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, useCase);
-        
-        var regexp = "TestClass";
-        var maxResults = 0;
-        var contextLines = 5;
-        var expectedRootPath = "expected_root_path";
-        
-        mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockRepository.Setup(r => r.GetCsFiles(It.IsAny<string>()))
-            .Returns(new List<string> { "test.cs" });
-        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
-        mockFileSystem.Setup(f => f.ReadAllLines(It.IsAny<string>()))
-            .Returns(new string[] { "Found TestClass" });
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
+
+        var result = tool.SearchBannerlordCode("TestClass", 0, 5);
+
         Assert.NotNull(result);
+        // With maxResults=0, search stops after first match and returns the total summary line
+        Assert.Single(result);
+        Assert.Contains("\nTotal matches for", result[0].CodeLine);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_WithNegativeMaxResults_ReturnsExpectedResult()
+    public void SymbolSearchTool_SearchBannerlordCode_WithNegativeMaxResults_UsesMockedUseCase()
     {
-        // Arrange
         var mockSourceProvider = new Mock<IBannerlordSourcePathProvider>();
-        var mockRepository = new Mock<ISymbolSearchRepository>();
-        var mockFileSystem = new Mock<IFileSystem>();
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(mockRepository.Object, mockFileSystem.Object);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSourceProvider.Object, mockSearchUseCase.Object);
-        
-        var regexp = "TestClass";
-        var maxResults = -1;
-        var contextLines = 5;
+
         var expectedRootPath = "expected_root_path";
-        
         mockSourceProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns(expectedRootPath);
-        mockSearchUseCase.Setup(u => u.Execute(regexp, expectedRootPath, maxResults, contextLines))
-            .Returns(new List<SearchResult> { new SearchResult { CodeLine = "\nTotal matches for \"TestClass\": 0" } });
-        
-        // Act
-        var result = tool.SearchBannerlordCode(regexp, maxResults, contextLines);
-        
-        // Assert
+        mockSearchUseCase.Setup(u => u.Execute("TestClass", expectedRootPath, -1, 5))
+            .Returns(new List<SearchResult> { new() { CodeLine = "\nTotal matches for \"TestClass\": 0" } });
+
+        var result = tool.SearchBannerlordCode("TestClass", -1, 5);
+
         Assert.NotNull(result);
+        Assert.Single(result);
     }
 }
