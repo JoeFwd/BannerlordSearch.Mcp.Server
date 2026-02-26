@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Application.Ports;
 
 /// <summary>
 /// Interface for providing the Bannerlord decompiled source root path.

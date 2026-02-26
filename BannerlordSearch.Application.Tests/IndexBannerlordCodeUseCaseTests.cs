@@ -1,5 +1,5 @@
+using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.UseCases;
-using BannerlordSearch.Domain;
 using Moq;
 using Xunit;
 

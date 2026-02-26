@@ -1,4 +1,4 @@
-using BannerlordSearch.Domain;
+using BannerlordSearch.Application.Ports;
 
 namespace BannerlordSearch.Application.UseCases;
 

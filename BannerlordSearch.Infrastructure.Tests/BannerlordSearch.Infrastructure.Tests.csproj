@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.20.70" />
+    <ProjectReference Include="..\BannerlordSearch.Application\BannerlordSearch.Application.csproj" />
     <ProjectReference Include="..\BannerlordSearch.Domain\BannerlordSearch.Domain.csproj" />
     <ProjectReference Include="..\BannerlordSearch.Infrastructure\BannerlordSearch.Infrastructure.csproj" />
     <PackageReference Include="xunit" Version="2.9.3"/>

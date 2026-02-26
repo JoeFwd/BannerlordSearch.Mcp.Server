@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\BannerlordSearch.Application\BannerlordSearch.Application.csproj" />
     <ProjectReference Include="..\BannerlordSearch.Domain\BannerlordSearch.Domain.csproj" />
   </ItemGroup>
 

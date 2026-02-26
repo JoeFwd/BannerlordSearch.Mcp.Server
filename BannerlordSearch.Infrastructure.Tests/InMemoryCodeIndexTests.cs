@@ -1,4 +1,4 @@
-using BannerlordSearch.Domain;
+using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Infrastructure;
 using Moq;
 using Xunit;
