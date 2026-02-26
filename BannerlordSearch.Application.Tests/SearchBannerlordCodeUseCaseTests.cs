@@ -88,27 +88,25 @@ public class SearchBannerlordCodeUseCaseTests
     }
 
     [Fact]
-    public void Execute_StopsAndReturnsTotalResult_WhenMaxResultsIsNegative()
+    public void Execute_ReturnsEmpty_WhenMaxResultsIsNegative()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
         var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
         var results = useCase.Execute("TestClass", -1, 10);
 
-        Assert.Single(results);
-        Assert.Contains("\nTotal matches for", results[0].CodeLine);
+        Assert.Empty(results);
     }
 
     [Fact]
-    public void Execute_StopsAndReturnsTotalResult_WhenMaxResultsIsZero()
+    public void Execute_ReturnsEmpty_WhenMaxResultsIsZero()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
         var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
 
         var results = useCase.Execute("TestClass", 0, 10);
 
-        Assert.Single(results);
-        Assert.Contains("\nTotal matches for", results[0].CodeLine);
+        Assert.Empty(results);
     }
 
     [Fact]

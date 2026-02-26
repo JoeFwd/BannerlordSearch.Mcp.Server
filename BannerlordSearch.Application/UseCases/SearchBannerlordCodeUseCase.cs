@@ -103,10 +103,6 @@ public class SearchBannerlordCodeUseCase
             }
         });
 
-        var results = new List<SearchResult>(resultsBag);
-        if (matchCountLocal > 0)
-            results.Add(new SearchResult { CodeLine = $"\nTotal matches for \"{regexp}\": {matchCountLocal}" });
-
-        return results;
+        return new List<SearchResult>(resultsBag);
     }
 }

@@ -79,7 +79,7 @@ public class SymbolSearchToolTests
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_WithZeroMaxResults_ReturnsTotalSummary()
+    public void SymbolSearchTool_SearchBannerlordCode_WithZeroMaxResults_ReturnsEmpty()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
         mockCodeIndex.Setup(ci => ci.Files)
@@ -90,9 +90,7 @@ public class SymbolSearchToolTests
         var result = tool.SearchBannerlordCode("TestClass", 0, 5);
 
         Assert.NotNull(result);
-        // With maxResults=0, search stops after first match and returns the total summary line
-        Assert.Single(result);
-        Assert.Contains("\nTotal matches for", result[0].CodeLine);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -102,11 +100,11 @@ public class SymbolSearchToolTests
         var tool = new SymbolSearchTool(mockSearchUseCase.Object);
 
         mockSearchUseCase.Setup(u => u.Execute("TestClass", -1, 5))
-            .Returns(new List<SearchResult> { new() { CodeLine = "\nTotal matches for \"TestClass\": 0" } });
+            .Returns(new List<SearchResult>());
 
         var result = tool.SearchBannerlordCode("TestClass", -1, 5);
 
         Assert.NotNull(result);
-        Assert.Single(result);
+        Assert.Empty(result);
     }
 }
