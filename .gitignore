@@ -1,0 +1,38 @@
+# Visual Studio / .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vspscc
+*.vssscc
+# Build results
+*.dll
+*.exe
+*.pdb
+# NuGet
+*.nupkg
+# Packages folder (if used)
+packages/
+# Resharper / JetBrains Rider
+.idea/
+*.DotSettings.user
+*.DotSettings
+# Rider specific caches
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+# JetBrains Rider settings folder
+.idea/**/shelf/**
+# VS Code settings (optional)
+.vscode/
+# OS generated files
+.DS_Store
+Thumbs.db
+# Logs
+*.log
+# Test results
+TestResults/
+
+.kilocode
