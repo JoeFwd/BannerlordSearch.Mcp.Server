@@ -32,7 +32,7 @@ public class SearchBannerlordCodeUseCase
         if (files.Count == 0)
             return new List<SearchResult>();
 
-        var symbolRegex = new Regex(regexp, RegexOptions.Compiled);
+        var symbolRegex = new Regex(regexp, RegexOptions.Compiled | RegexOptions.IgnoreCase);
         var resultsBag = new ConcurrentBag<SearchResult>();
         int matchCountLocal = 0;
 

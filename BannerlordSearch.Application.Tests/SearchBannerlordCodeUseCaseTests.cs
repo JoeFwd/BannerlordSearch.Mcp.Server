@@ -157,6 +157,18 @@ public class SearchBannerlordCodeUseCaseTests
     }
 
     [Fact]
+    public void Execute_MatchesPatternCaseInsensitively()
+    {
+        var mockIndex = IndexWith(MakeFile("test.cs", "public class MobileParty { }"));
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+
+        var results = useCase.Execute("mobileparty", 1000, 0);
+
+        Assert.NotEmpty(results);
+        Assert.Contains(results, r => r.CodeLine.Contains("MobileParty"));
+    }
+
+    [Fact]
     public void Execute_SetsLocationToNamespace_WhenNamespacePresent()
     {
         var mockIndex = IndexWith(MakeFile("test.cs",
