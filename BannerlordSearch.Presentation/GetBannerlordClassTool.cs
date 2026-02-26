@@ -2,13 +2,11 @@ using System.ComponentModel;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
 using ModelContextProtocol.Server;
- 
+
 namespace BannerlordSearch.Presentation;
- 
+
 [McpServerToolType]
-public sealed class GetBannerlordClassTool(
-    IBannerlordSourcePathProvider bannerlordSourceFolderPathProvider,
-    GetBannerlordClassUseCase getBannerlordClassUseCase)
+public sealed class GetBannerlordClassTool(GetBannerlordClassUseCase getBannerlordClassUseCase)
 {
     [McpServerTool]
     [Description(
@@ -22,9 +20,7 @@ public sealed class GetBannerlordClassTool(
     {
         if (string.IsNullOrWhiteSpace(className))
             throw new ValidationException("className must be provided");
- 
-        var effectiveRoot = bannerlordSourceFolderPathProvider.GetBannerlordSourceFolderPath();
- 
+
         return getBannerlordClassUseCase.Execute(className, 0, 0);
     }
 }

@@ -5,16 +5,15 @@ namespace BannerlordSearch.Application.UseCases;
 /// <summary>
 /// Use case for retrieving the full source of a specified class.
 /// Uses the in-memory <see cref="ICodeIndex"/> for O(1) lookup by fully-qualified class name.
+/// The index must be built before calling this method (see <see cref="IndexBannerlordCodeUseCase"/>).
 /// </summary>
 public class GetBannerlordClassUseCase
 {
     private readonly ICodeIndex _codeIndex;
-    private readonly IBannerlordSourcePathProvider _sourceFolderProvider;
 
-    public GetBannerlordClassUseCase(ICodeIndex codeIndex, IBannerlordSourcePathProvider sourceFolderProvider)
+    public GetBannerlordClassUseCase(ICodeIndex codeIndex)
     {
         _codeIndex = codeIndex ?? throw new ArgumentNullException(nameof(codeIndex));
-        _sourceFolderProvider = sourceFolderProvider ?? throw new ArgumentNullException(nameof(sourceFolderProvider));
     }
 
     /// <summary>
@@ -27,9 +26,6 @@ public class GetBannerlordClassUseCase
     {
         if (string.IsNullOrWhiteSpace(className))
             return "[Error] className must be provided";
-
-        var rootPath = _sourceFolderProvider.GetBannerlordSourceFolderPath();
-        _codeIndex.EnsureBuilt(rootPath);
 
         var file = _codeIndex.FindClass(className);
         if (file == null)

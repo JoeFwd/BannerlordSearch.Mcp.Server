@@ -2,13 +2,11 @@ using System.ComponentModel;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
 using ModelContextProtocol.Server;
- 
+
 namespace BannerlordSearch.Presentation;
- 
+
 [McpServerToolType]
-public sealed class SymbolSearchTool(
-    IBannerlordSourcePathProvider bannerlordSourceFolderPathProvider,
-    SearchBannerlordCodeUseCase searchBannerlordCodeUseCase)
+public sealed class SymbolSearchTool(SearchBannerlordCodeUseCase searchBannerlordCodeUseCase)
 {
     [McpServerTool]
     [Description(
@@ -24,9 +22,7 @@ public sealed class SymbolSearchTool(
     {
         if (string.IsNullOrWhiteSpace(regexp))
             throw new ValidationException("regexp must be provided");
- 
-        var effectiveRoot = bannerlordSourceFolderPathProvider.GetBannerlordSourceFolderPath();
- 
-        return searchBannerlordCodeUseCase.Execute(regexp, effectiveRoot, maxResults, contextLines);
+
+        return searchBannerlordCodeUseCase.Execute(regexp, maxResults, contextLines);
     }
 }

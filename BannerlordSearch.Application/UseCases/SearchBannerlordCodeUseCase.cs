@@ -19,15 +19,13 @@ public class SearchBannerlordCodeUseCase
     }
 
     /// <summary>
-    /// Searches all indexed .cs files under <paramref name="rootPath"/> for the given <paramref name="regexp"/>.
-    /// The index is built on first call and reused on subsequent calls.
+    /// Searches all indexed .cs files for the given <paramref name="regexp"/>.
+    /// The index must be built before calling this method (see <see cref="IndexBannerlordCodeUseCase"/>).
     /// </summary>
-    public virtual List<SearchResult> Execute(string regexp, string rootPath, int maxResults, int contextLines)
+    public virtual List<SearchResult> Execute(string regexp, int maxResults, int contextLines)
     {
         if (string.IsNullOrEmpty(regexp))
             throw new ArgumentNullException(nameof(regexp));
-
-        _codeIndex.EnsureBuilt(rootPath);
 
         var files = _codeIndex.Files;
         if (files.Count == 0)
