@@ -12,57 +12,55 @@ namespace BannerlordSearch.Presentation.Tests;
 
 public class GetBannerlordClassToolTests
 {
-    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
-        new() { FilePath = filePath, Lines = lines };
+    private readonly GetBannerlordClassTool _tool;
+
+    public GetBannerlordClassToolTests()
+    {
+        var useCase = new GetBannerlordClassUseCase(
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            NullLogger<GetBannerlordClassUseCase>.Instance);
+        _tool = new GetBannerlordClassTool(useCase);
+    }
 
     [Fact]
     public void GetBannerlordClassTool_CanBeInstantiated()
     {
-        var mockClassUseCase = new Mock<GetBannerlordClassUseCase>(Mock.Of<ICodeIndex>(), NullLogger<GetBannerlordClassUseCase>.Instance);
+        var mockClassUseCase = new Mock<GetBannerlordClassUseCase>(
+            MockBehavior.Strict,
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            NullLogger<GetBannerlordClassUseCase>.Instance);
         Assert.NotNull(mockClassUseCase.Object);
     }
 
     [Fact]
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsNull()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
-        var tool = new GetBannerlordClassTool(useCase);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(null!));
+        var ex = Assert.Throws<ValidationError>(() => _tool.GetBannerlordClassDefinition(null!));
         Assert.Equal("className must be provided", ex.Message);
     }
 
     [Fact]
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsEmpty()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
-        var tool = new GetBannerlordClassTool(useCase);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(""));
+        var ex = Assert.Throws<ValidationError>(() => _tool.GetBannerlordClassDefinition(""));
         Assert.Equal("className must be provided", ex.Message);
     }
 
     [Fact]
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsWhitespace()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
-        var tool = new GetBannerlordClassTool(useCase);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition("   "));
+        var ex = Assert.Throws<ValidationError>(() => _tool.GetBannerlordClassDefinition("   "));
         Assert.Equal("className must be provided", ex.Message);
     }
 
     [Fact]
     public void GetBannerlordClassDefinition_ReturnsClassSource_WhenClassFound()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         var className = "TestNamespace.TestClass";
 
         mockCodeIndex.Setup(ci => ci.FindClass(className))
-            .Returns(MakeFile("TestClass.cs", "class TestClass { }"));
+            .Returns(TestHelper.MakeFile("TestClass.cs", "class TestClass { }"));
 
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
@@ -76,11 +74,11 @@ public class GetBannerlordClassToolTests
     [Fact]
     public void GetBannerlordClassDefinition_ReturnsEmpty_WhenFileHasOnlyEmptyLines()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         var className = "TestNamespace.TestClass";
 
         mockCodeIndex.Setup(ci => ci.FindClass(className))
-            .Returns(MakeFile("TestClass.cs", ""));
+            .Returns(TestHelper.MakeFile("TestClass.cs", ""));
 
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
@@ -94,7 +92,7 @@ public class GetBannerlordClassToolTests
     [Fact]
     public void GetBannerlordClassDefinition_ReturnsError_WhenClassNotFound()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         var className = "TestNamespace.NonExistentClass";
 
         mockCodeIndex.Setup(ci => ci.FindClass(className)).Returns((IndexedFile?)null);

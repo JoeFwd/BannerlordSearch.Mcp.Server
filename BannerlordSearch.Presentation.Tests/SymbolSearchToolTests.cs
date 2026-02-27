@@ -12,50 +12,52 @@ namespace BannerlordSearch.Presentation.Tests;
 
 public class SymbolSearchToolTests
 {
-    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
-        new() { FilePath = filePath, Lines = lines };
+    private readonly SymbolSearchTool _tool;
+
+    public SymbolSearchToolTests()
+    {
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(
+            MockBehavior.Strict,
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            NullLogger<SearchBannerlordCodeUseCase>.Instance);
+        _tool = new SymbolSearchTool(mockSearchUseCase.Object);
+    }
 
     [Fact]
     public void SymbolSearchTool_CanBeInstantiated()
     {
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(
+            MockBehavior.Strict,
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            NullLogger<SearchBannerlordCodeUseCase>.Instance);
         Assert.NotNull(mockSearchUseCase.Object);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpIsNull()
     {
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
-        var tool = new SymbolSearchTool(mockSearchUseCase.Object);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode(null!, 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => _tool.SearchBannerlordCode(null!, 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpIsEmpty()
     {
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
-        var tool = new SymbolSearchTool(mockSearchUseCase.Object);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode("", 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => _tool.SearchBannerlordCode("", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpContainsOnlyWhitespace()
     {
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
-        var tool = new SymbolSearchTool(mockSearchUseCase.Object);
-
-        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode("   ", 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => _tool.SearchBannerlordCode("   ", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ReturnsEmptyList_WhenNoFilesIndexed()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         mockCodeIndex.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
         var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         var tool = new SymbolSearchTool(useCase);
@@ -69,9 +71,9 @@ public class SymbolSearchToolTests
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_ReturnsResults_WhenMatchFound()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         mockCodeIndex.Setup(ci => ci.Files)
-            .Returns(new List<IndexedFile> { MakeFile("test.cs", "Found TestClass") });
+            .Returns(new List<IndexedFile> { TestHelper.MakeFile("test.cs", "Found TestClass") });
         var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         var tool = new SymbolSearchTool(useCase);
 
@@ -85,9 +87,9 @@ public class SymbolSearchToolTests
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_WithZeroMaxResults_ReturnsEmpty()
     {
-        var mockCodeIndex = new Mock<ICodeIndex>();
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
         mockCodeIndex.Setup(ci => ci.Files)
-            .Returns(new List<IndexedFile> { MakeFile("test.cs", "Found TestClass") });
+            .Returns(new List<IndexedFile> { TestHelper.MakeFile("test.cs", "Found TestClass") });
         var useCase = new SearchBannerlordCodeUseCase(mockCodeIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         var tool = new SymbolSearchTool(useCase);
 
@@ -100,7 +102,10 @@ public class SymbolSearchToolTests
     [Fact]
     public void SymbolSearchTool_SearchBannerlordCode_WithNegativeMaxResults_UsesMockedUseCase()
     {
-        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
+        var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(
+            MockBehavior.Strict,
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            NullLogger<SearchBannerlordCodeUseCase>.Instance);
         var tool = new SymbolSearchTool(mockSearchUseCase.Object);
 
         mockSearchUseCase.Setup(u => u.Execute("TestClass", -1, 5))

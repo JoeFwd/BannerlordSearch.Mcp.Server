@@ -17,8 +17,8 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_CanBeInstantiated()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
-        
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+
         // Act
         var repository = new SymbolFileRepository(mockFileSystem.Object);
 
@@ -33,9 +33,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_ReturnsEmptyList_WhenDirectoryDoesNotExist()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var rootPath = "nonexistent_path";
 
         mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(false);
@@ -55,9 +55,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_ReturnsFiles_WhenDirectoryExists()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var rootPath = "valid_path";
         var expectedFiles = new List<string> { "file1.cs", "file2.cs" };
 
@@ -82,9 +82,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_CachesResults()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var rootPath = "valid_path";
         var expectedFiles = new List<string> { "file1.cs", "file2.cs" };
 
@@ -112,9 +112,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_ReadAllLines_CallsFileSystem()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var filePath = "test.cs";
         var expectedLines = new string[] { "line1", "line2" };
 
@@ -138,9 +138,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_HandlesDirectoryEnumerationExceptions()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var rootPath = "valid_path";
 
         mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
@@ -161,9 +161,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_HandlesEmptyDirectory()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         var rootPath = "empty_path";
 
         mockFileSystem.Setup(fs => fs.DirectoryExists(rootPath)).Returns(true);
@@ -185,9 +185,9 @@ public class SymbolFileRepositoryTests
     public void SymbolFileRepository_GetCsFiles_HandlesNullDirectoryPath()
     {
         // Arrange
-        var mockFileSystem = new Mock<IFileSystem>();
+        var mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
         var repository = new SymbolFileRepository(mockFileSystem.Object);
-        
+
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => repository.GetCsFiles(null));
     }

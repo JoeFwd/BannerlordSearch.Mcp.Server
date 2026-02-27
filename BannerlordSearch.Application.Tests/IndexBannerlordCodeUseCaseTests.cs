@@ -17,8 +17,8 @@ public class IndexBannerlordCodeUseCaseTests
     public void CanBeInstantiated()
     {
         var useCase = new IndexBannerlordCodeUseCase(
-            new Mock<ICodeIndex>().Object,
-            new Mock<IBannerlordSourcePathProvider>().Object,
+            new Mock<ICodeIndex>(MockBehavior.Strict).Object,
+            new Mock<IBannerlordSourcePathProvider>(MockBehavior.Strict).Object,
             NullLogger<IndexBannerlordCodeUseCase>.Instance);
         Assert.NotNull(useCase);
     }
@@ -27,22 +27,23 @@ public class IndexBannerlordCodeUseCaseTests
     public void Constructor_ThrowsArgumentNullException_WhenCodeIndexIsNull()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new IndexBannerlordCodeUseCase(null!, new Mock<IBannerlordSourcePathProvider>().Object, NullLogger<IndexBannerlordCodeUseCase>.Instance));
+            new IndexBannerlordCodeUseCase(null!, new Mock<IBannerlordSourcePathProvider>(MockBehavior.Strict).Object, NullLogger<IndexBannerlordCodeUseCase>.Instance));
     }
 
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenPathProviderIsNull()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new IndexBannerlordCodeUseCase(new Mock<ICodeIndex>().Object, null!, NullLogger<IndexBannerlordCodeUseCase>.Instance));
+            new IndexBannerlordCodeUseCase(new Mock<ICodeIndex>(MockBehavior.Strict).Object, null!, NullLogger<IndexBannerlordCodeUseCase>.Instance));
     }
 
     [Fact]
     public void Execute_CallsGetBannerlordSourceFolderPath()
     {
-        var mockIndex = new Mock<ICodeIndex>();
+        var mockIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
+        mockIndex.Setup(ci => ci.EnsureBuilt("some_path"));
         mockIndex.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
-        var mockProvider = new Mock<IBannerlordSourcePathProvider>();
+        var mockProvider = new Mock<IBannerlordSourcePathProvider>(MockBehavior.Strict);
         mockProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("some_path");
         var useCase = new IndexBannerlordCodeUseCase(mockIndex.Object, mockProvider.Object, NullLogger<IndexBannerlordCodeUseCase>.Instance);
 
@@ -54,9 +55,10 @@ public class IndexBannerlordCodeUseCaseTests
     [Fact]
     public void Execute_CallsEnsureBuilt_WithPathFromProvider()
     {
-        var mockIndex = new Mock<ICodeIndex>();
+        var mockIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
+        mockIndex.Setup(ci => ci.EnsureBuilt("my_root_path"));
         mockIndex.Setup(ci => ci.Files).Returns(new List<IndexedFile>());
-        var mockProvider = new Mock<IBannerlordSourcePathProvider>();
+        var mockProvider = new Mock<IBannerlordSourcePathProvider>(MockBehavior.Strict);
         mockProvider.Setup(p => p.GetBannerlordSourceFolderPath()).Returns("my_root_path");
         var useCase = new IndexBannerlordCodeUseCase(mockIndex.Object, mockProvider.Object, NullLogger<IndexBannerlordCodeUseCase>.Instance);
 

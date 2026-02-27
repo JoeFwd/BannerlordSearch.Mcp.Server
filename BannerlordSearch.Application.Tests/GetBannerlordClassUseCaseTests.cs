@@ -11,13 +11,10 @@ namespace BannerlordSearch.Application.Tests;
 
 public class GetBannerlordClassUseCaseTests
 {
-    private static IndexedFile MakeFile(string filePath, params string[] lines) =>
-        new() { FilePath = filePath, Lines = lines };
-
     [Fact]
     public void CanBeInstantiated()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>(MockBehavior.Strict).Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         Assert.NotNull(useCase);
     }
 
@@ -30,7 +27,7 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsNull()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>(MockBehavior.Strict).Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute(null!);
 
@@ -40,7 +37,7 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsEmpty()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>(MockBehavior.Strict).Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute(string.Empty);
 
@@ -50,8 +47,8 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenClassNotFound()
     {
-        var index = new Mock<ICodeIndex>();
-        index.Setup(ci => ci.FindClass(It.IsAny<string>())).Returns((IndexedFile?)null);
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
+        index.Setup(ci => ci.FindClass("NonExistentClass")).Returns((IndexedFile?)null);
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("NonExistentClass");
@@ -62,9 +59,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsClassSource_WhenClassFound()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace",
                 "{",
                 "    class TestClass { }",
@@ -80,9 +77,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsClassSource_WhenClassHasNoNamespace()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestClass"))
-            .Returns(MakeFile("TestClass.cs", "class TestClass { }"));
+            .Returns(TestHelper.MakeFile("TestClass.cs", "class TestClass { }"));
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestClass");
@@ -94,9 +91,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenStartLineGreaterThanEndLine()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
@@ -108,9 +105,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsSpecificLineRange_WhenValidLineRangeProvided()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace",
                 "{",
                 "    public class TestClass",
@@ -133,9 +130,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsSingleLine_WhenSingleLineRangeProvided()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace",
                 "{",
                 "    public class TestClass",
@@ -157,9 +154,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenLineRangeExceedsFileSize()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
@@ -171,9 +168,9 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenLargeEndLineExceedsFileSize()
     {
-        var index = new Mock<ICodeIndex>();
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
-            .Returns(MakeFile("TestClass.cs",
+            .Returns(TestHelper.MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 

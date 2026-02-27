@@ -11,7 +11,7 @@ public class InMemoryCodeIndexTests
 {
     private static Mock<IFileSystem> MakeFs(string root, IEnumerable<(string path, string[] lines)> files)
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists(root)).Returns(true);
         fs.Setup(f => f.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             .Returns(files.Select(f => f.path).ToList());
@@ -29,14 +29,14 @@ public class InMemoryCodeIndexTests
     [Fact]
     public void IsReady_ReturnsFalse_BeforeEnsureBuilt()
     {
-        var index = new InMemoryCodeIndex(new Mock<IFileSystem>().Object, NullLogger<InMemoryCodeIndex>.Instance);
+        var index = new InMemoryCodeIndex(new Mock<IFileSystem>(MockBehavior.Strict).Object, NullLogger<InMemoryCodeIndex>.Instance);
         Assert.False(index.IsReady);
     }
 
     [Fact]
     public void IsReady_ReturnsTrue_AfterEnsureBuilt()
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
         var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
@@ -48,7 +48,7 @@ public class InMemoryCodeIndexTests
     [Fact]
     public void Files_IsEmpty_WhenDirectoryDoesNotExist()
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
         var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
@@ -75,7 +75,7 @@ public class InMemoryCodeIndexTests
     [Fact]
     public void FindClass_ReturnsNull_WhenIndexIsEmpty()
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
         var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
@@ -165,13 +165,13 @@ public class InMemoryCodeIndexTests
         index.EnsureBuilt("root");
 
         // EnumerateFiles called only once even though EnsureBuilt called twice
-        fs.Verify(f => f.EnumerateFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()), Times.Once);
+        fs.Verify(f => f.EnumerateFiles("root", "*.cs", SearchOption.AllDirectories), Times.Once);
     }
 
     [Fact]
     public void EnsureBuilt_HandlesFileReadException_Gracefully()
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists("root")).Returns(true);
         fs.Setup(f => f.EnumerateFiles("root", "*.cs", SearchOption.AllDirectories))
             .Returns(new[] { "root/A.cs" });
@@ -186,7 +186,7 @@ public class InMemoryCodeIndexTests
     [Fact]
     public void EnsureBuilt_HandlesEnumerationException_Gracefully()
     {
-        var fs = new Mock<IFileSystem>();
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
         fs.Setup(f => f.DirectoryExists("root")).Returns(true);
         fs.Setup(f => f.EnumerateFiles("root", "*.cs", SearchOption.AllDirectories))
             .Throws(new IOException("Access denied"));
