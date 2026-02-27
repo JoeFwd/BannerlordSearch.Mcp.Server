@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.IO;
+using BannerlordSearch.Application.Ports.Repositories;
 
 namespace BannerlordSearch.Infrastructure;
 

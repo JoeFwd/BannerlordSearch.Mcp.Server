@@ -1,6 +1,9 @@
 using System.Text.RegularExpressions;
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.IO;
+using BannerlordSearch.Application.Ports.Repositories;
 using BannerlordSearch.Domain;
+using BannerlordSearch.Domain.Models;
 using Microsoft.Extensions.Logging;
 
 namespace BannerlordSearch.Infrastructure;

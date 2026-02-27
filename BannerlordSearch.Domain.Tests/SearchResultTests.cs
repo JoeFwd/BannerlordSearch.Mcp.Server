@@ -1,3 +1,4 @@
+using BannerlordSearch.Domain.Models;
 using Xunit;
 
 namespace BannerlordSearch.Domain.Tests;

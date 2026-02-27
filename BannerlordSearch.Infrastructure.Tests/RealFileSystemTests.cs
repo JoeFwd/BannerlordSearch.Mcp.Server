@@ -1,4 +1,5 @@
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.IO;
 using Xunit;
 
 namespace BannerlordSearch.Infrastructure.Tests;

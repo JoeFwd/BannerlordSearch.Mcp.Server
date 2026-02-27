@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Application.Ports;
+namespace BannerlordSearch.Application.Ports.Repositories;
 
 /// <summary>
 /// Repository interface for symbol search functionality.

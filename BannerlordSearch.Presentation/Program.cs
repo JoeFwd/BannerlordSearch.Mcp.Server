@@ -1,5 +1,8 @@
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.Configuration;
+using BannerlordSearch.Application.Ports.IO;
+using BannerlordSearch.Application.Ports.Repositories;
 using BannerlordSearch.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;

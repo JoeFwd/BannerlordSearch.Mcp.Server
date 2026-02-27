@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Application.Ports;
+namespace BannerlordSearch.Application.Ports.IO;
 
 /// <summary>
 /// Abstraction over file-system operations to enable unit testing without touching the real disk.

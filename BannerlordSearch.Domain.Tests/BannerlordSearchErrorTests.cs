@@ -1,5 +1,6 @@
 using BannerlordSearch.Domain;
 using System;
+using BannerlordSearch.Domain.Errors;
 using Xunit;
 
 namespace BannerlordSearch.Domain.Tests;
@@ -7,13 +8,13 @@ namespace BannerlordSearch.Domain.Tests;
 /// <summary>
 /// Tests for the <see cref="BannerlordSearchError"/> class.
 /// </summary>
-public class BannerlordSearchExceptionTests
+public class BannerlordSearchErrorTests
 {
     /// <summary>
     /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated successfully.
     /// </summary>
     [Fact]
-    public void BannerlordSearchException_CanBeInstantiated()
+    public void BannerlordSearchError_CanBeInstantiated()
     {
         // Act
         var exception = new InvalidSourcePathError("Test message");
@@ -27,7 +28,7 @@ public class BannerlordSearchExceptionTests
     /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated with a message.
     /// </summary>
     [Fact]
-    public void BannerlordSearchException_CanBeInstantiated_WithMessage()
+    public void BannerlordSearchError_CanBeInstantiated_WithMessage()
     {
         // Arrange
         const string message = "Test exception message";
@@ -45,7 +46,7 @@ public class BannerlordSearchExceptionTests
     /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated with a message and inner exception.
     /// </summary>
     [Fact]
-    public void BannerlordSearchException_CanBeInstantiated_WithMessageAndInnerException()
+    public void BannerlordSearchError_CanBeInstantiated_WithMessageAndInnerException()
     {
         // Arrange
         const string message = "Test exception message";
@@ -65,7 +66,7 @@ public class BannerlordSearchExceptionTests
     /// Verifies that the <see cref="BannerlordSearchError"/> inherits from Exception.
     /// </summary>
     [Fact]
-    public void BannerlordSearchException_InheritsFromException()
+    public void BannerlordSearchError_InheritsFromException()
     {
         // Act
         var exception = new InvalidSourcePathError("Test message");

@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Domain.Errors;
 
 /// <summary>
 /// Exception thrown when the Bannerlord source path is invalid or not configured.

@@ -1,4 +1,6 @@
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.Configuration;
+using BannerlordSearch.Application.Ports.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BannerlordSearch.Application.UseCases;

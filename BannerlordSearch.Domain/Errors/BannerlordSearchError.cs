@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Domain.Errors;
 
 /// <summary>
 /// Base exception class for all domain-specific exceptions in the Bannerlord Search application.

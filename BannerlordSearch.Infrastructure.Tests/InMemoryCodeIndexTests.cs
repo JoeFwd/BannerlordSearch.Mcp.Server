@@ -1,4 +1,5 @@
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.IO;
 using BannerlordSearch.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Domain.Models;
 
 /// <summary>
 /// Represents a single result from a symbol search.

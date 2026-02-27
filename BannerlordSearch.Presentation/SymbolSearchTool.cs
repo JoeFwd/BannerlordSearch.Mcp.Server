@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
+using BannerlordSearch.Domain.Errors;
+using BannerlordSearch.Domain.Models;
 using ModelContextProtocol.Server;
 
 namespace BannerlordSearch.Presentation;

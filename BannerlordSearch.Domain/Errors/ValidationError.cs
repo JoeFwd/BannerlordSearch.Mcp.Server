@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Domain.Errors;
 
 /// <summary>
 /// Exception thrown when validation fails in the domain layer.

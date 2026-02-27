@@ -1,6 +1,8 @@
 using BannerlordSearch.Application.Ports;
+using BannerlordSearch.Application.Ports.Repositories;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
+using BannerlordSearch.Domain.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;

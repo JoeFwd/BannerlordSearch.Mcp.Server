@@ -1,4 +1,4 @@
-namespace BannerlordSearch.Domain;
+namespace BannerlordSearch.Domain.Models;
 
 /// <summary>
 /// Represents a C# source file loaded into the in-memory code index.

@@ -1,3 +1,4 @@
+using BannerlordSearch.Domain.Errors;
 using Xunit;
 
 namespace BannerlordSearch.Domain.Tests;
@@ -5,13 +6,13 @@ namespace BannerlordSearch.Domain.Tests;
 /// <summary>
 /// Tests for the <see cref="InvalidSourcePathError"/> class.
 /// </summary>
-public class InvalidSourcePathExceptionTests
+public class InvalidSourcePathErrorTests
 {
     /// <summary>
     /// Verifies that the <see cref="InvalidSourcePathError"/> can be instantiated successfully.
     /// </summary>
     [Fact]
-    public void InvalidSourcePathException_CanBeInstantiated()
+    public void InvalidSourcePathError_CanBeInstantiated()
     {
         // Act
         var exception = new InvalidSourcePathError("Test message");
@@ -25,7 +26,7 @@ public class InvalidSourcePathExceptionTests
     /// Verifies that the <see cref="InvalidSourcePathError"/> can be instantiated with a message.
     /// </summary>
     [Fact]
-    public void InvalidSourcePathException_CanBeInstantiated_WithMessage()
+    public void InvalidSourcePathError_CanBeInstantiated_WithMessage()
     {
         // Arrange
         const string message = "Test exception message";
@@ -43,7 +44,7 @@ public class InvalidSourcePathExceptionTests
     /// Verifies that the <see cref="InvalidSourcePathError"/> can be instantiated with a message and inner exception.
     /// </summary>
     [Fact]
-    public void InvalidSourcePathException_CanBeInstantiated_WithMessageAndInnerException()
+    public void InvalidSourcePathError_CanBeInstantiated_WithMessageAndInnerException()
     {
         // Arrange
         const string message = "Test exception message";
@@ -63,7 +64,7 @@ public class InvalidSourcePathExceptionTests
     /// Verifies that the <see cref="InvalidSourcePathError"/> inherits from <see cref="BannerlordSearchError"/>.
     /// </summary>
     [Fact]
-    public void InvalidSourcePathException_InheritsFromBannerlordSearchException()
+    public void InvalidSourcePathError_InheritsFromBannerlordSearchError()
     {
         // Act
         var exception = new InvalidSourcePathError("Test message");

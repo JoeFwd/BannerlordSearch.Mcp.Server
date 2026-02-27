@@ -1,6 +1,6 @@
-using BannerlordSearch.Domain;
+using BannerlordSearch.Domain.Models;
 
-namespace BannerlordSearch.Application.Ports;
+namespace BannerlordSearch.Application.Ports.Repositories;
 
 /// <summary>
 /// Provides an in-memory index of all C# source files for fast regex searching
