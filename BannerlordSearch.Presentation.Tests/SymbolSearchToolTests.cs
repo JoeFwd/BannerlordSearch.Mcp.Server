@@ -19,32 +19,32 @@ public class SymbolSearchToolTests
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpIsNull()
+    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpIsNull()
     {
         var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSearchUseCase.Object);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode(null!, 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode(null!, 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpIsEmpty()
+    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpIsEmpty()
     {
         var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSearchUseCase.Object);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode("", 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode("", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 
     [Fact]
-    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationException_WhenRegexpContainsOnlyWhitespace()
+    public void SymbolSearchTool_SearchBannerlordCode_ThrowsValidationError_WhenRegexpContainsOnlyWhitespace()
     {
         var mockSearchUseCase = new Mock<SearchBannerlordCodeUseCase>(new Mock<ICodeIndex>().Object);
         var tool = new SymbolSearchTool(mockSearchUseCase.Object);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.SearchBannerlordCode("   ", 1000, 10));
+        var ex = Assert.Throws<ValidationError>(() => tool.SearchBannerlordCode("   ", 1000, 10));
         Assert.Equal("regexp must be provided", ex.Message);
     }
 

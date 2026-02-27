@@ -19,7 +19,7 @@ public sealed class GetBannerlordClassTool(GetBannerlordClassUseCase getBannerlo
         [Description("The full name of the Bannerlord class to retrieve.")] string className)
     {
         if (string.IsNullOrWhiteSpace(className))
-            throw new ValidationException("className must be provided");
+            throw new ValidationError("className must be provided");
 
         return getBannerlordClassUseCase.Execute(className, 0, 0);
     }

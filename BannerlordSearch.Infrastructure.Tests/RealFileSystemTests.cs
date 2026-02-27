@@ -1,3 +1,4 @@
+using BannerlordSearch.Application.Ports;
 using Xunit;
 
 namespace BannerlordSearch.Infrastructure.Tests;
@@ -84,7 +85,7 @@ public class RealFileSystemTests
     public void RealFileSystem_EnumerateFiles_ReturnsCorrectFiles()
     {
         // Arrange
-        var fileSystem = new RealFileSystem();
+        IFileSystem fileSystem = new RealFileSystem();
         var testDirectory = Path.Combine(Path.GetTempPath(), "TestDir");
         Directory.CreateDirectory(testDirectory);
         File.WriteAllText(Path.Combine(testDirectory, "Test1.cs"), "test content 1");
@@ -133,7 +134,7 @@ public class RealFileSystemTests
     public void RealFileSystem_EnumerateFiles_WithSubdirectories_ReturnsAllMatchingFiles()
     {
         // Arrange
-        var fileSystem = new RealFileSystem();
+        IFileSystem fileSystem = new RealFileSystem();
         var testDirectory = Path.Combine(Path.GetTempPath(), "TestDir");
         var subDirectory = Path.Combine(testDirectory, "SubDir");
         Directory.CreateDirectory(testDirectory);
@@ -205,7 +206,7 @@ public class RealFileSystemTests
     public void RealFileSystem_EnumerateFiles_HandlesEmptyDirectory()
     {
         // Arrange
-        var fileSystem = new RealFileSystem();
+        IFileSystem fileSystem = new RealFileSystem();
         var testDirectory = Path.Combine(Path.GetTempPath(), "TestDir");
         Directory.CreateDirectory(testDirectory);
 
@@ -224,7 +225,7 @@ public class RealFileSystemTests
     public void RealFileSystem_EnumerateFiles_HandlesNonExistentDirectory()
     {
         // Arrange
-        var fileSystem = new RealFileSystem();
+        IFileSystem fileSystem = new RealFileSystem();
 
         // Act & Assert
         Assert.Throws<DirectoryNotFoundException>(() => fileSystem.EnumerateFiles(Path.Combine(Path.GetTempPath(), "NonExistentDir"), "*.cs", SearchOption.TopDirectoryOnly));

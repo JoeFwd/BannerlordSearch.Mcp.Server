@@ -5,26 +5,26 @@ using Xunit;
 namespace BannerlordSearch.Domain.Tests;
 
 /// <summary>
-/// Tests for the <see cref="BannerlordSearchException"/> class.
+/// Tests for the <see cref="BannerlordSearchError"/> class.
 /// </summary>
 public class BannerlordSearchExceptionTests
 {
     /// <summary>
-    /// Verifies that the <see cref="BannerlordSearchException"/> can be instantiated successfully.
+    /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated successfully.
     /// </summary>
     [Fact]
     public void BannerlordSearchException_CanBeInstantiated()
     {
         // Act
-        var exception = new InvalidSourcePathException("Test message");
+        var exception = new InvalidSourcePathError("Test message");
 
         // Assert
         Assert.NotNull(exception);
-        Assert.IsType<InvalidSourcePathException>(exception);
+        Assert.IsType<InvalidSourcePathError>(exception);
     }
 
     /// <summary>
-    /// Verifies that the <see cref="BannerlordSearchException"/> can be instantiated with a message.
+    /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated with a message.
     /// </summary>
     [Fact]
     public void BannerlordSearchException_CanBeInstantiated_WithMessage()
@@ -33,16 +33,16 @@ public class BannerlordSearchExceptionTests
         const string message = "Test exception message";
 
         // Act
-        var exception = new InvalidSourcePathException(message);
+        var exception = new InvalidSourcePathError(message);
 
         // Assert
         Assert.NotNull(exception);
         Assert.Equal(message, exception.Message);
-        Assert.IsType<InvalidSourcePathException>(exception);
+        Assert.IsType<InvalidSourcePathError>(exception);
     }
 
     /// <summary>
-    /// Verifies that the <see cref="BannerlordSearchException"/> can be instantiated with a message and inner exception.
+    /// Verifies that the <see cref="BannerlordSearchError"/> can be instantiated with a message and inner exception.
     /// </summary>
     [Fact]
     public void BannerlordSearchException_CanBeInstantiated_WithMessageAndInnerException()
@@ -52,23 +52,23 @@ public class BannerlordSearchExceptionTests
         var innerException = new InvalidOperationException("Inner exception");
 
         // Act
-        var exception = new InvalidSourcePathException(message, innerException);
+        var exception = new InvalidSourcePathError(message, innerException);
 
         // Assert
         Assert.NotNull(exception);
         Assert.Equal(message, exception.Message);
         Assert.Equal(innerException, exception.InnerException);
-        Assert.IsType<InvalidSourcePathException>(exception);
+        Assert.IsType<InvalidSourcePathError>(exception);
     }
 
     /// <summary>
-    /// Verifies that the <see cref="BannerlordSearchException"/> inherits from Exception.
+    /// Verifies that the <see cref="BannerlordSearchError"/> inherits from Exception.
     /// </summary>
     [Fact]
     public void BannerlordSearchException_InheritsFromException()
     {
         // Act
-        var exception = new InvalidSourcePathException("Test message");
+        var exception = new InvalidSourcePathError("Test message");
 
         // Assert
         Assert.IsAssignableFrom<Exception>(exception);

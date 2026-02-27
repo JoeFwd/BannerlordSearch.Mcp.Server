@@ -19,35 +19,35 @@ public class GetBannerlordClassToolTests
     }
 
     [Fact]
-    public void GetBannerlordClassDefinition_ThrowsValidationException_WhenClassNameIsNull()
+    public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsNull()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
         var tool = new GetBannerlordClassTool(useCase);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.GetBannerlordClassDefinition(null!));
+        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(null!));
         Assert.Equal("className must be provided", ex.Message);
     }
 
     [Fact]
-    public void GetBannerlordClassDefinition_ThrowsValidationException_WhenClassNameIsEmpty()
+    public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsEmpty()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
         var tool = new GetBannerlordClassTool(useCase);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.GetBannerlordClassDefinition(""));
+        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(""));
         Assert.Equal("className must be provided", ex.Message);
     }
 
     [Fact]
-    public void GetBannerlordClassDefinition_ThrowsValidationException_WhenClassNameIsWhitespace()
+    public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsWhitespace()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
         var tool = new GetBannerlordClassTool(useCase);
 
-        var ex = Assert.Throws<ValidationException>(() => tool.GetBannerlordClassDefinition("   "));
+        var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition("   "));
         Assert.Equal("className must be provided", ex.Message);
     }
 

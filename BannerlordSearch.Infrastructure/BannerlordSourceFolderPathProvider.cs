@@ -16,6 +16,6 @@ public class BannerlordSourceFolderPathProvider : IBannerlordSourcePathProvider
     {
         var envRoot = Environment.GetEnvironmentVariable("BANNERLORD_SOURCE_PATH");
         if (!string.IsNullOrWhiteSpace(envRoot)) return envRoot;
-        throw new InvalidSourcePathException("Environment variable BANNERLORD_SOURCE_PATH is not set.");
+        throw new InvalidSourcePathError("Environment variable BANNERLORD_SOURCE_PATH is not set.");
     }
 }

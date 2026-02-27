@@ -21,7 +21,7 @@ public sealed class SymbolSearchTool(SearchBannerlordCodeUseCase searchBannerlor
         [Description("The number of surrounding context lines to include before and after each match.")] int contextLines)
     {
         if (string.IsNullOrWhiteSpace(regexp))
-            throw new ValidationException("regexp must be provided");
+            throw new ValidationError("regexp must be provided");
 
         return searchBannerlordCodeUseCase.Execute(regexp, maxResults, contextLines);
     }
