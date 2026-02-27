@@ -1,6 +1,7 @@
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -14,7 +15,7 @@ public class GetBannerlordClassToolTests
     [Fact]
     public void GetBannerlordClassTool_CanBeInstantiated()
     {
-        var mockClassUseCase = new Mock<GetBannerlordClassUseCase>(Mock.Of<ICodeIndex>());
+        var mockClassUseCase = new Mock<GetBannerlordClassUseCase>(Mock.Of<ICodeIndex>(), NullLogger<GetBannerlordClassUseCase>.Instance);
         Assert.NotNull(mockClassUseCase.Object);
     }
 
@@ -22,7 +23,7 @@ public class GetBannerlordClassToolTests
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsNull()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(null!));
@@ -33,7 +34,7 @@ public class GetBannerlordClassToolTests
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsEmpty()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition(""));
@@ -44,7 +45,7 @@ public class GetBannerlordClassToolTests
     public void GetBannerlordClassDefinition_ThrowsValidationError_WhenClassNameIsWhitespace()
     {
         var mockCodeIndex = new Mock<ICodeIndex>();
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var ex = Assert.Throws<ValidationError>(() => tool.GetBannerlordClassDefinition("   "));
@@ -60,7 +61,7 @@ public class GetBannerlordClassToolTests
         mockCodeIndex.Setup(ci => ci.FindClass(className))
             .Returns(MakeFile("TestClass.cs", "class TestClass { }"));
 
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var result = tool.GetBannerlordClassDefinition(className);
@@ -78,7 +79,7 @@ public class GetBannerlordClassToolTests
         mockCodeIndex.Setup(ci => ci.FindClass(className))
             .Returns(MakeFile("TestClass.cs", ""));
 
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var result = tool.GetBannerlordClassDefinition(className);
@@ -95,7 +96,7 @@ public class GetBannerlordClassToolTests
 
         mockCodeIndex.Setup(ci => ci.FindClass(className)).Returns((IndexedFile?)null);
 
-        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object);
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var result = tool.GetBannerlordClassDefinition(className);

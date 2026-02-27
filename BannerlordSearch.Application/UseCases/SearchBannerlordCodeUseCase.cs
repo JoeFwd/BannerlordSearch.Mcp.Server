@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace BannerlordSearch.Application.UseCases;
 
@@ -13,10 +14,12 @@ namespace BannerlordSearch.Application.UseCases;
 public class SearchBannerlordCodeUseCase
 {
     private readonly ICodeIndex _codeIndex;
+    private readonly ILogger<SearchBannerlordCodeUseCase> _logger;
 
-    public SearchBannerlordCodeUseCase(ICodeIndex codeIndex)
+    public SearchBannerlordCodeUseCase(ICodeIndex codeIndex, ILogger<SearchBannerlordCodeUseCase> logger)
     {
         _codeIndex = codeIndex ?? throw new ArgumentNullException(nameof(codeIndex));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -27,6 +30,9 @@ public class SearchBannerlordCodeUseCase
     {
         if (string.IsNullOrEmpty(regexp))
             throw new ArgumentNullException(nameof(regexp));
+
+        _logger.LogDebug("Searching for pattern '{Pattern}' (maxResults={MaxResults}, contextLines={ContextLines})",
+            regexp, maxResults, contextLines);
 
         var files = _codeIndex.Files;
         if (files.Count == 0)
@@ -40,7 +46,9 @@ public class SearchBannerlordCodeUseCase
         Parallel.ForEach(files, parallelOptions,
             (indexedFile, state) => SearchFile(indexedFile, state, symbolRegex, maxResults, contextLines, resultsBag, matchCount));
 
-        return new List<SearchResult>(resultsBag);
+        var results = new List<SearchResult>(resultsBag);
+        _logger.LogInformation("Search for '{Pattern}' returned {ResultCount} result(s)", regexp, results.Count);
+        return results;
     }
 
     private static void SearchFile(

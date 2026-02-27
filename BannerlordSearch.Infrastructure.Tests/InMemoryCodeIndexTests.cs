@@ -1,5 +1,6 @@
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Infrastructure;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -21,13 +22,13 @@ public class InMemoryCodeIndexTests
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenFileSystemIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new InMemoryCodeIndex(null!));
+        Assert.Throws<ArgumentNullException>(() => new InMemoryCodeIndex(null!, NullLogger<InMemoryCodeIndex>.Instance));
     }
 
     [Fact]
     public void IsReady_ReturnsFalse_BeforeEnsureBuilt()
     {
-        var index = new InMemoryCodeIndex(new Mock<IFileSystem>().Object);
+        var index = new InMemoryCodeIndex(new Mock<IFileSystem>().Object, NullLogger<InMemoryCodeIndex>.Instance);
         Assert.False(index.IsReady);
     }
 
@@ -36,7 +37,7 @@ public class InMemoryCodeIndexTests
     {
         var fs = new Mock<IFileSystem>();
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root");
 
@@ -48,7 +49,7 @@ public class InMemoryCodeIndexTests
     {
         var fs = new Mock<IFileSystem>();
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root");
 
@@ -63,7 +64,7 @@ public class InMemoryCodeIndexTests
             ("root/A.cs", new[] { "class A { }" }),
             ("root/B.cs", new[] { "class B { }" })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root");
 
@@ -75,7 +76,7 @@ public class InMemoryCodeIndexTests
     {
         var fs = new Mock<IFileSystem>();
         fs.Setup(f => f.DirectoryExists("root")).Returns(false);
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         Assert.Null(index.FindClass("Foo.Bar"));
@@ -94,7 +95,7 @@ public class InMemoryCodeIndexTests
                 "}"
             })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         var result = index.FindClass("TaleWorlds.CampaignSystem.Hero");
@@ -114,7 +115,7 @@ public class InMemoryCodeIndexTests
                 "public class Hero { }"
             })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         var result = index.FindClass("TaleWorlds.CampaignSystem.Hero");
@@ -129,7 +130,7 @@ public class InMemoryCodeIndexTests
         {
             ("root/Foo.cs", new[] { "public class Foo { }" })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         var result = index.FindClass("Foo");
@@ -144,7 +145,7 @@ public class InMemoryCodeIndexTests
         {
             ("root/A.cs", new[] { "namespace Foo;", "public class A { }" })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         Assert.Null(index.FindClass("Foo.NonExistent"));
@@ -157,7 +158,7 @@ public class InMemoryCodeIndexTests
         {
             ("root/A.cs", new[] { "class A { }" })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root");
         index.EnsureBuilt("root");
@@ -174,7 +175,7 @@ public class InMemoryCodeIndexTests
         fs.Setup(f => f.EnumerateFiles("root", "*.cs", SearchOption.AllDirectories))
             .Returns(new[] { "root/A.cs" });
         fs.Setup(f => f.ReadAllLines("root/A.cs")).Throws(new IOException("Access denied"));
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root"); // must not throw
 
@@ -188,7 +189,7 @@ public class InMemoryCodeIndexTests
         fs.Setup(f => f.DirectoryExists("root")).Returns(true);
         fs.Setup(f => f.EnumerateFiles("root", "*.cs", SearchOption.AllDirectories))
             .Throws(new IOException("Access denied"));
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
 
         index.EnsureBuilt("root"); // must not throw
 
@@ -206,7 +207,7 @@ public class InMemoryCodeIndexTests
                 "public sealed class ItemObject { }"
             })
         });
-        var index = new InMemoryCodeIndex(fs.Object);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
         index.EnsureBuilt("root");
 
         Assert.NotNull(index.FindClass("TaleWorlds.Core.ItemObject"));

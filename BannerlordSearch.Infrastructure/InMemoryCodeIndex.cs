@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace BannerlordSearch.Infrastructure;
 
@@ -12,6 +13,7 @@ namespace BannerlordSearch.Infrastructure;
 public sealed class InMemoryCodeIndex : ICodeIndex
 {
     private readonly IFileSystem _fileSystem;
+    private readonly ILogger<InMemoryCodeIndex> _logger;
     private readonly object _buildLock = new();
 
     private List<IndexedFile> _files = new();
@@ -20,9 +22,10 @@ public sealed class InMemoryCodeIndex : ICodeIndex
 
     private static readonly Regex ClassDeclRegex = new(@"\bclass\s+(\w+)", RegexOptions.Compiled);
 
-    public InMemoryCodeIndex(IFileSystem fileSystem)
+    public InMemoryCodeIndex(IFileSystem fileSystem, ILogger<InMemoryCodeIndex> logger)
     {
         _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public bool IsReady => _builtRootPath != null;
@@ -56,11 +59,14 @@ public sealed class InMemoryCodeIndex : ICodeIndex
     {
         if (!_fileSystem.DirectoryExists(rootPath))
         {
+            _logger.LogWarning("Root path not found: {RootPath}", rootPath);
             _files = new List<IndexedFile>();
             _classLookup = new Dictionary<string, IndexedFile>(StringComparer.Ordinal);
             _builtRootPath = rootPath;
             return;
         }
+
+        _logger.LogDebug("Enumerating .cs files under {RootPath}", rootPath);
 
         List<string> csFilePaths;
         try
@@ -74,6 +80,8 @@ public sealed class InMemoryCodeIndex : ICodeIndex
             csFilePaths = new List<string>();
         }
 
+        _logger.LogInformation("Found {FileCount} .cs files", csFilePaths.Count);
+
         var files = new List<IndexedFile>(csFilePaths.Count);
         var lookup = new Dictionary<string, IndexedFile>(StringComparer.Ordinal);
 
@@ -81,7 +89,11 @@ public sealed class InMemoryCodeIndex : ICodeIndex
         {
             string[] lines;
             try { lines = _fileSystem.ReadAllLines(filePath); }
-            catch { continue; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Skipping file {FilePath}: {Message}", filePath, ex.Message);
+                continue;
+            }
 
             var indexedFile = new IndexedFile { FilePath = filePath, Lines = lines };
             files.Add(indexedFile);
@@ -91,6 +103,8 @@ public sealed class InMemoryCodeIndex : ICodeIndex
         _files = files;
         _classLookup = lookup;
         _builtRootPath = rootPath;
+
+        _logger.LogInformation("Index ready: {FileCount} files, {ClassCount} classes indexed", files.Count, lookup.Count);
     }
 
     private static void ParseAndIndexClasses(

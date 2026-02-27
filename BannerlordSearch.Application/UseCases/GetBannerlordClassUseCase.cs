@@ -1,4 +1,5 @@
 using BannerlordSearch.Application.Ports;
+using Microsoft.Extensions.Logging;
 
 namespace BannerlordSearch.Application.UseCases;
 
@@ -10,10 +11,12 @@ namespace BannerlordSearch.Application.UseCases;
 public class GetBannerlordClassUseCase
 {
     private readonly ICodeIndex _codeIndex;
+    private readonly ILogger<GetBannerlordClassUseCase> _logger;
 
-    public GetBannerlordClassUseCase(ICodeIndex codeIndex)
+    public GetBannerlordClassUseCase(ICodeIndex codeIndex, ILogger<GetBannerlordClassUseCase> logger)
     {
         _codeIndex = codeIndex ?? throw new ArgumentNullException(nameof(codeIndex));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -27,9 +30,16 @@ public class GetBannerlordClassUseCase
         if (string.IsNullOrWhiteSpace(className))
             return "[Error] className must be provided";
 
+        _logger.LogDebug("Looking up class '{ClassName}'", className);
+
         var file = _codeIndex.FindClass(className);
         if (file == null)
+        {
+            _logger.LogWarning("Class '{ClassName}' not found in index", className);
             return $"[Error] Class '{className}' not found";
+        }
+
+        _logger.LogInformation("Found class '{ClassName}' in {FilePath}", className, file.FilePath);
 
         var lines = file.Lines;
 

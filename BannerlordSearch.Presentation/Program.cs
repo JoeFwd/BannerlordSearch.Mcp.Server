@@ -41,9 +41,14 @@ builder.Services.AddMcpServer()
     .WithToolsFromAssembly();
 
 var app = builder.Build();
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+logger.LogInformation("Starting BannerlordSearch MCP server");
 
 // Build the in-memory code index eagerly at startup
 app.Services.GetRequiredService<IndexBannerlordCodeUseCase>().Execute();
+
+logger.LogInformation("MCP server ready");
 
 // Use CORS middleware
 app.UseCors("AllowAll");

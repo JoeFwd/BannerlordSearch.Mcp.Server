@@ -1,6 +1,7 @@
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -14,20 +15,20 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void CanBeInstantiated()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         Assert.NotNull(useCase);
     }
 
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenCodeIndexIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(null!));
+        Assert.Throws<ArgumentNullException>(() => new GetBannerlordClassUseCase(null!, NullLogger<GetBannerlordClassUseCase>.Instance));
     }
 
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsNull()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute(null!);
 
@@ -37,7 +38,7 @@ public class GetBannerlordClassUseCaseTests
     [Fact]
     public void Execute_ReturnsError_WhenClassNameIsEmpty()
     {
-        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object);
+        var useCase = new GetBannerlordClassUseCase(new Mock<ICodeIndex>().Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute(string.Empty);
 
@@ -49,7 +50,7 @@ public class GetBannerlordClassUseCaseTests
     {
         var index = new Mock<ICodeIndex>();
         index.Setup(ci => ci.FindClass(It.IsAny<string>())).Returns((IndexedFile?)null);
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("NonExistentClass");
 
@@ -66,7 +67,7 @@ public class GetBannerlordClassUseCaseTests
                 "{",
                 "    class TestClass { }",
                 "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass");
 
@@ -80,7 +81,7 @@ public class GetBannerlordClassUseCaseTests
         var index = new Mock<ICodeIndex>();
         index.Setup(ci => ci.FindClass("TestClass"))
             .Returns(MakeFile("TestClass.cs", "class TestClass { }"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestClass");
 
@@ -95,7 +96,7 @@ public class GetBannerlordClassUseCaseTests
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
             .Returns(MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass", startLine: 5, endLine: 3);
 
@@ -115,7 +116,7 @@ public class GetBannerlordClassUseCaseTests
                 "        public void Foo() { }",
                 "    }",
                 "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass", startLine: 3, endLine: 5);
 
@@ -140,7 +141,7 @@ public class GetBannerlordClassUseCaseTests
                 "        public void Foo() { }",
                 "    }",
                 "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass", startLine: 3, endLine: 3);
 
@@ -158,7 +159,7 @@ public class GetBannerlordClassUseCaseTests
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
             .Returns(MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass", startLine: 1, endLine: 10);
 
@@ -172,7 +173,7 @@ public class GetBannerlordClassUseCaseTests
         index.Setup(ci => ci.FindClass("TestNamespace.TestClass"))
             .Returns(MakeFile("TestClass.cs",
                 "namespace TestNamespace", "{", "    class TestClass { }", "}"));
-        var useCase = new GetBannerlordClassUseCase(index.Object);
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("TestNamespace.TestClass", startLine: 1, endLine: int.MaxValue);
 

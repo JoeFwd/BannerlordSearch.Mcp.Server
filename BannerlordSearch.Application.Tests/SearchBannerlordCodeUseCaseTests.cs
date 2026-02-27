@@ -1,6 +1,7 @@
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.UseCases;
 using BannerlordSearch.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -28,34 +29,34 @@ public class SearchBannerlordCodeUseCaseTests
     [Fact]
     public void CanBeInstantiated()
     {
-        var useCase = new SearchBannerlordCodeUseCase(new Mock<ICodeIndex>().Object);
+        var useCase = new SearchBannerlordCodeUseCase(new Mock<ICodeIndex>().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         Assert.NotNull(useCase);
     }
 
     [Fact]
     public void Constructor_ThrowsArgumentNullException_WhenCodeIndexIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new SearchBannerlordCodeUseCase(null!));
+        Assert.Throws<ArgumentNullException>(() => new SearchBannerlordCodeUseCase(null!, NullLogger<SearchBannerlordCodeUseCase>.Instance));
     }
 
     [Fact]
     public void Execute_ThrowsArgumentNullException_WhenRegexpIsNull()
     {
-        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         Assert.Throws<ArgumentNullException>(() => useCase.Execute(null!, 1000, 10));
     }
 
     [Fact]
     public void Execute_ThrowsArgumentNullException_WhenRegexpIsEmpty()
     {
-        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
         Assert.Throws<ArgumentNullException>(() => useCase.Execute("", 1000, 10));
     }
 
     [Fact]
     public void Execute_ReturnsEmptyList_WhenIndexHasNoFiles()
     {
-        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object);
+        var useCase = new SearchBannerlordCodeUseCase(EmptyIndex().Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("test", 1000, 10);
 
@@ -67,7 +68,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_ReturnsEmptyList_WhenNoFilesMatchPattern()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class SomeOtherClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", 1000, 10);
 
@@ -79,7 +80,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_ReturnsResults_WhenPatternMatchesContent()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", 1000, 10);
 
@@ -91,7 +92,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_ReturnsEmpty_WhenMaxResultsIsNegative()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", -1, 10);
 
@@ -102,7 +103,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_ReturnsEmpty_WhenMaxResultsIsZero()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", 0, 10);
 
@@ -120,7 +121,7 @@ public class SearchBannerlordCodeUseCaseTests
             "        public void Foo() { }",
             "    }",
             "}"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", 1000, 2);
 
@@ -134,7 +135,7 @@ public class SearchBannerlordCodeUseCaseTests
         var mockIndex = IndexWith(
             MakeFile("test1.cs", "class TestClass { }"),
             MakeFile("test2.cs", "class TestClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", 1, 10);
 
@@ -146,7 +147,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_HandlesLargeMaxResults()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "class TestClass { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("TestClass", int.MaxValue, 10);
 
@@ -158,7 +159,7 @@ public class SearchBannerlordCodeUseCaseTests
     public void Execute_MatchesPatternCaseInsensitively()
     {
         var mockIndex = IndexWith(MakeFile("test.cs", "public class MobileParty { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("mobileparty", 1000, 0);
 
@@ -172,7 +173,7 @@ public class SearchBannerlordCodeUseCaseTests
         var mockIndex = IndexWith(MakeFile("test.cs",
             "namespace TaleWorlds.Core;",
             "public class ItemObject { }"));
-        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object);
+        var useCase = new SearchBannerlordCodeUseCase(mockIndex.Object, NullLogger<SearchBannerlordCodeUseCase>.Instance);
 
         var results = useCase.Execute("ItemObject", 1000, 0);
 
