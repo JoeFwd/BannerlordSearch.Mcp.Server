@@ -1,21 +1,16 @@
+workflow: GitHubFlow/v1
 mode: ContinuousDeployment
 branches:
   main:
     increment: Minor
-    prevent-increment-of-merged-branch-version: true
-    track-merge-target: false
-  develop:
-    increment: Minor
-    track-merge-target: false
-  feature/*:
+    prevent-increment:
+      of-merged-branch: true
+  feature:
     increment: Patch
-    track-merge-target: false
-  release/*:
+  release:
     increment: Patch
-    track-merge-target: false
-  hotfix/*:
+  hotfix:
     increment: Patch
-    track-merge-target: false
 ignore:
   sha: []
 commit-message-incrementing: Enabled
