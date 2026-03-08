@@ -209,6 +209,14 @@ public class RealFileSystemTests
         // Arrange
         IFileSystem fileSystem = new RealFileSystem();
         var testDirectory = Path.Combine(Path.GetTempPath(), "TestDir");
+        // Ensure the directory is clean before creating it to avoid leftover files from previous tests
+        if (Directory.Exists(testDirectory))
+        {
+            foreach (var file in Directory.GetFiles(testDirectory))
+                File.Delete(file);
+            foreach (var dir in Directory.GetDirectories(testDirectory))
+                Directory.Delete(dir, true);
+        }
         Directory.CreateDirectory(testDirectory);
 
         // Act
