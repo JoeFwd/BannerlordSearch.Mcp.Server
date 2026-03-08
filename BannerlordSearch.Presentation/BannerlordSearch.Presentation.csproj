@@ -17,6 +17,7 @@
     <Nullable>enable</Nullable>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>BannerlordSearch.Mcp.Server</ToolCommandName>
+    <PackageId>BannerlordSearch.Mcp.Server</PackageId>
     <Version>$(GitVersion_NuGetVersion)</Version>
   </PropertyGroup>
 
