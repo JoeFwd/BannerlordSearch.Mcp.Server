@@ -37,10 +37,6 @@ jobs:
         with:
           useConfigFile: true
 
-      - name: Set version variables
-        run: |
-          echo "GitVersion_NuGetVersion=${{ steps.gitversion.outputs.nuGetVersion }}" >> $GITHUB_ENV
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -56,7 +52,7 @@ jobs:
             -c Release \
             --no-build \
             --no-restore \
-            -p:PackageVersion=${{ env.GitVersion_NuGetVersion }} \
+            -p:PackageVersion=$GitVersion_NuGetVersion \
             -o ./nupkg
 
       - name: Publish to NuGet
