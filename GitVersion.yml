@@ -1,0 +1,23 @@
+mode: ContinuousDeployment
+branches:
+  main:
+    increment: Minor
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+  develop:
+    increment: Minor
+    track-merge-target: false
+  feature/*:
+    increment: Patch
+    track-merge-target: false
+  release/*:
+    increment: Patch
+    track-merge-target: false
+  hotfix/*:
+    increment: Patch
+    track-merge-target: false
+ignore:
+  sha: []
+commit-message-incrementing: Enabled
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
