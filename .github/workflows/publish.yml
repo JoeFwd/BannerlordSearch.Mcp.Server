@@ -58,7 +58,7 @@ jobs:
             -c Release \
             --no-build \
             --no-restore \
-            -p:PackageVersion=$GitVersion_NuGetVersion \
+            -p:PackageVersion=$GitVersion_SemVer \
             -o ./nupkg
 
       - name: Publish to NuGet
