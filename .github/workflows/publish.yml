@@ -23,6 +23,14 @@ jobs:
         with:
           versionSpec: '6.x'
 
+      - name: Debug GitVersion config
+        run: |
+          echo "=== GitVersion.yml ==="
+          cat GitVersion.yml
+          echo ""
+          echo "=== Running GitVersion directly ==="
+          dotnet-gitversion . /output json /l console 2>&1 || true
+
       - name: Determine version
         id: gitversion
         uses: gittools/actions/gitversion/execute@v3
