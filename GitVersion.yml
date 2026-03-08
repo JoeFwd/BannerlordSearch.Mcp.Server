@@ -11,6 +11,7 @@ branches:
     increment: Patch
   hotfix:
     increment: Patch
+    regex: ^hotfix[\/\-](?<BranchName>.+)
 ignore:
   sha: []
 commit-message-incrementing: Enabled
