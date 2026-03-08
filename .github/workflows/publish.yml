@@ -37,6 +37,12 @@ jobs:
         with:
           useConfigFile: true
 
+      - name: Debug version outputs
+        run: |
+          echo "Step output nuGetVersion: ${{ steps.gitversion.outputs.nuGetVersion }}"
+          echo "--- All GitVersion env vars ---"
+          env | grep -i gitversion || echo "(none found)"
+
       - name: Restore dependencies
         run: dotnet restore
 
