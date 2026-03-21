@@ -1,23 +1,21 @@
-using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.Ports.Configuration;
-using BannerlordSearch.Domain;
 using BannerlordSearch.Domain.Errors;
 
 namespace BannerlordSearch.Infrastructure;
- 
+
 /// <summary>
-/// Concrete implementation of <see cref="IBannerlordSourcePathProvider"/> that provides the Bannerlord decompiled source root path.
+/// Concrete implementation of <see cref="IBannerlordSourcePathProvider"/> that reads
+/// the Bannerlord decompiled source root path from the BANNERLORD_SOURCE_PATH environment variable.
 /// </summary>
 public class BannerlordSourceFolderPathProvider : IBannerlordSourcePathProvider
 {
-    /// <summary>
-    ///     Returns the Bannerlord decompiled source root path.
-    ///     Checks environment variable BANNERLORD_SOURCE_PATH, otherwise falls back to default decompiler cache path.
-    /// </summary>
     public string GetBannerlordSourceFolderPath()
     {
         var envRoot = Environment.GetEnvironmentVariable("BANNERLORD_SOURCE_PATH");
         if (!string.IsNullOrWhiteSpace(envRoot)) return envRoot;
-        throw new InvalidSourcePathError("Environment variable BANNERLORD_SOURCE_PATH is not set.");
+
+        throw new InvalidSourcePathError(
+            "BANNERLORD_SOURCE_PATH is not set. " +
+            "Set it to the root folder containing the Bannerlord decompiled .cs source files.");
     }
 }
