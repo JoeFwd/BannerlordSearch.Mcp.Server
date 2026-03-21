@@ -1,7 +1,6 @@
 using BannerlordSearch.Application.Ports;
 using BannerlordSearch.Application.Ports.Repositories;
 using BannerlordSearch.Application.UseCases;
-using BannerlordSearch.Domain;
 using BannerlordSearch.Domain.Errors;
 using BannerlordSearch.Domain.Models;
 using Microsoft.Extensions.Logging.Abstractions;
