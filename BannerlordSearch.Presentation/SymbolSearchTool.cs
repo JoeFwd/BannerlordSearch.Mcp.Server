@@ -19,8 +19,8 @@ public sealed class SymbolSearchTool(SearchBannerlordCodeUseCase searchBannerlor
     )]
     public List<SearchResult> SearchBannerlordCode(
         [Description("The regular expression pattern to search for in the Bannerlord source tree.")] string regexp,
-        [Description("The maximum number of matching results to return.")] int maxResults,
-        [Description("The number of surrounding context lines to include before and after each match.")] int contextLines)
+        [Description("The maximum number of matching results to return.")] int maxResults = SearchDefaults.MaxResults,
+        [Description("The number of surrounding context lines to include before and after each match.")] int contextLines = SearchDefaults.ContextLines)
     {
         if (string.IsNullOrWhiteSpace(regexp))
             throw new ValidationError("regexp must be provided");
