@@ -1,8 +1,9 @@
 workflow: GitHubFlow/v1
 mode: ContinuousDeployment
+next-version: 0.1.1
 branches:
   main:
-    increment: Minor
+    increment: Patch
     prevent-increment:
       of-merged-branch: true
   feature:
