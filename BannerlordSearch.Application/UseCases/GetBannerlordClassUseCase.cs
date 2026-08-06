@@ -21,7 +21,10 @@ public class GetBannerlordClassUseCase
     }
 
     /// <summary>
-    /// Returns the source code of the class identified by its fully qualified name.
+    /// Returns the source code of the class identified by its fully qualified name,
+    /// or by its simple (unqualified) name, e.g. "Hero" instead of "TaleWorlds.CampaignSystem.Hero".
+    /// If the simple name matches more than one class, an error listing the fully-qualified
+    /// candidates is returned so the caller can disambiguate.
     /// If <paramref name="startLine"/> and <paramref name="endLine"/> are both &gt; 0,
     /// only that line range (inclusive, 1-based) is returned.
     /// Errors are reported as a plain string prefixed with "[Error]".
@@ -34,6 +37,20 @@ public class GetBannerlordClassUseCase
         _logger.LogDebug("Looking up class '{ClassName}'", className);
 
         var file = _codeIndex.FindClass(className);
+        if (file == null)
+        {
+            var candidates = _codeIndex.FindFullyQualifiedNames(className);
+            if (candidates.Count == 1)
+            {
+                file = _codeIndex.FindClass(candidates[0]);
+            }
+            else if (candidates.Count > 1)
+            {
+                _logger.LogWarning("Class name '{ClassName}' is ambiguous: {Candidates}", className, string.Join(", ", candidates));
+                return $"[Error] Multiple classes named '{className}' found: {string.Join(", ", candidates)}. Please specify one of these fully-qualified names.";
+            }
+        }
+
         if (file == null)
         {
             _logger.LogWarning("Class '{ClassName}' not found in index", className);

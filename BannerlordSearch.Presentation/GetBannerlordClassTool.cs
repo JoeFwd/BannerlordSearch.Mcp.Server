@@ -16,7 +16,8 @@ public sealed class GetBannerlordClassTool(GetBannerlordClassUseCase getBannerlo
         "Intended for Bannerlord modding, reverse engineering, and internal code exploration."
     )]
     public string GetBannerlordClassDefinition(
-        [Description("The full name of the Bannerlord class to retrieve.")] string className)
+        [Description("The name of the Bannerlord class to retrieve, e.g. 'Hero' or the fully-qualified 'TaleWorlds.CampaignSystem.Hero'. " +
+            "If the short name matches classes in multiple namespaces, an error listing the fully-qualified candidates is returned instead.")] string className)
     {
         if (string.IsNullOrWhiteSpace(className))
             throw new ValidationError("className must be provided");

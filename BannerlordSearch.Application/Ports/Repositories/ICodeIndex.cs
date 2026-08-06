@@ -21,6 +21,13 @@ public interface ICodeIndex
     IndexedFile? FindClass(string fullyQualifiedName);
 
     /// <summary>
+    /// Returns the fully-qualified names of all indexed classes whose simple (unqualified)
+    /// name matches <paramref name="simpleClassName"/> (e.g. "Hero" matches "TaleWorlds.CampaignSystem.Hero").
+    /// Empty if no class has that simple name.
+    /// </summary>
+    IReadOnlyList<string> FindFullyQualifiedNames(string simpleClassName);
+
+    /// <summary>
     /// Builds the index for <paramref name="rootPath"/> if not already built.
     /// Subsequent calls with the same path are no-ops.
     /// </summary>

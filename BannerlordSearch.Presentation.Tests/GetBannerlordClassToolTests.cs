@@ -95,13 +95,53 @@ public class GetBannerlordClassToolTests
         var className = "TestNamespace.NonExistentClass";
 
         mockCodeIndex.Setup(ci => ci.FindClass(className)).Returns((IndexedFile?)null);
+        mockCodeIndex.Setup(ci => ci.FindFullyQualifiedNames(className)).Returns(Array.Empty<string>());
 
         var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
         var tool = new GetBannerlordClassTool(useCase);
 
         var result = tool.GetBannerlordClassDefinition(className);
 
-        Assert.NotNull(result);
         Assert.StartsWith("[Error]", result);
+    }
+
+    [Fact]
+    public void GetBannerlordClassDefinition_ReturnsClassSource_WhenSimpleNameIsUnique()
+    {
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
+
+        mockCodeIndex.Setup(ci => ci.FindClass("Hero")).Returns((IndexedFile?)null);
+        mockCodeIndex.Setup(ci => ci.FindFullyQualifiedNames("Hero")).Returns(new[] { "TaleWorlds.CampaignSystem.Hero" });
+        mockCodeIndex.Setup(ci => ci.FindClass("TaleWorlds.CampaignSystem.Hero"))
+            .Returns(TestHelper.MakeFile("Hero.cs", "class Hero { }"));
+
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+        var tool = new GetBannerlordClassTool(useCase);
+
+        var result = tool.GetBannerlordClassDefinition("Hero");
+
+        Assert.Contains("class Hero", result);
+    }
+
+    [Fact]
+    public void GetBannerlordClassDefinition_ReturnsAmbiguityError_WhenSimpleNameMatchesMultipleClasses()
+    {
+        var mockCodeIndex = new Mock<ICodeIndex>(MockBehavior.Strict);
+
+        mockCodeIndex.Setup(ci => ci.FindClass("Settlement")).Returns((IndexedFile?)null);
+        mockCodeIndex.Setup(ci => ci.FindFullyQualifiedNames("Settlement")).Returns(new[]
+        {
+            "TaleWorlds.CampaignSystem.Settlement",
+            "TaleWorlds.Core.Settlement"
+        });
+
+        var useCase = new GetBannerlordClassUseCase(mockCodeIndex.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+        var tool = new GetBannerlordClassTool(useCase);
+
+        var result = tool.GetBannerlordClassDefinition("Settlement");
+
+        Assert.StartsWith("[Error]", result);
+        Assert.Contains("TaleWorlds.CampaignSystem.Settlement", result);
+        Assert.Contains("TaleWorlds.Core.Settlement", result);
     }
 }

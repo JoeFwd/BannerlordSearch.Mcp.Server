@@ -21,6 +21,7 @@ public sealed class InMemoryCodeIndex : ICodeIndex
 
     private List<IndexedFile> _files = new();
     private Dictionary<string, IndexedFile> _classLookup = new(StringComparer.Ordinal);
+    private Dictionary<string, List<string>> _simpleNameLookup = new(StringComparer.Ordinal);
     private string? _builtRootPath;
 
     private static readonly Regex ClassDeclRegex = new(@"\bclass\s+(\w+)", RegexOptions.Compiled);
@@ -39,6 +40,13 @@ public sealed class InMemoryCodeIndex : ICodeIndex
     {
         _classLookup.TryGetValue(fullyQualifiedName, out var file);
         return file;
+    }
+
+    public IReadOnlyList<string> FindFullyQualifiedNames(string simpleClassName)
+    {
+        return _simpleNameLookup.TryGetValue(simpleClassName, out var fqns)
+            ? fqns
+            : Array.Empty<string>();
     }
 
     /// <summary>
@@ -65,6 +73,7 @@ public sealed class InMemoryCodeIndex : ICodeIndex
             _logger.LogWarning("Root path not found: {RootPath}", rootPath);
             _files = new List<IndexedFile>();
             _classLookup = new Dictionary<string, IndexedFile>(StringComparer.Ordinal);
+            _simpleNameLookup = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             _builtRootPath = rootPath;
             return;
         }
@@ -87,6 +96,7 @@ public sealed class InMemoryCodeIndex : ICodeIndex
 
         var files = new List<IndexedFile>(csFilePaths.Count);
         var lookup = new Dictionary<string, IndexedFile>(StringComparer.Ordinal);
+        var simpleNameLookup = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
         foreach (var filePath in csFilePaths)
         {
@@ -100,11 +110,12 @@ public sealed class InMemoryCodeIndex : ICodeIndex
 
             var indexedFile = new IndexedFile { FilePath = filePath, Lines = lines };
             files.Add(indexedFile);
-            ParseAndIndexClasses(lines, indexedFile, lookup);
+            ParseAndIndexClasses(lines, indexedFile, lookup, simpleNameLookup);
         }
 
         _files = files;
         _classLookup = lookup;
+        _simpleNameLookup = simpleNameLookup;
         _builtRootPath = rootPath;
 
         _logger.LogInformation("Index ready: {FileCount} files, {ClassCount} classes indexed", files.Count, lookup.Count);
@@ -113,7 +124,8 @@ public sealed class InMemoryCodeIndex : ICodeIndex
     private static void ParseAndIndexClasses(
         string[] lines,
         IndexedFile indexedFile,
-        Dictionary<string, IndexedFile> lookup)
+        Dictionary<string, IndexedFile> lookup,
+        Dictionary<string, List<string>> simpleNameLookup)
     {
         string currentNamespace = string.Empty;
 
@@ -138,7 +150,15 @@ public sealed class InMemoryCodeIndex : ICodeIndex
                 var fqn = string.IsNullOrEmpty(currentNamespace)
                     ? simpleClassName
                     : $"{currentNamespace}.{simpleClassName}";
-                lookup.TryAdd(fqn, indexedFile);
+                if (lookup.TryAdd(fqn, indexedFile))
+                {
+                    if (!simpleNameLookup.TryGetValue(simpleClassName, out var fqns))
+                    {
+                        fqns = new List<string>();
+                        simpleNameLookup[simpleClassName] = fqns;
+                    }
+                    fqns.Add(fqn);
+                }
             }
         }
     }

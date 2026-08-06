@@ -213,4 +213,61 @@ public class InMemoryCodeIndexTests
 
         Assert.NotNull(index.FindClass("TaleWorlds.Core.ItemObject"));
     }
+
+    [Fact]
+    public void FindFullyQualifiedNames_ReturnsEmpty_WhenNoClassHasThatSimpleName()
+    {
+        var fs = MakeFs("root", new[]
+        {
+            ("root/A.cs", new[] { "namespace Foo;", "public class A { }" })
+        });
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
+        index.EnsureBuilt("root");
+
+        Assert.Empty(index.FindFullyQualifiedNames("NonExistent"));
+    }
+
+    [Fact]
+    public void FindFullyQualifiedNames_ReturnsSingleMatch_WhenSimpleNameIsUnique()
+    {
+        var fs = MakeFs("root", new[]
+        {
+            ("root/Hero.cs", new[] { "namespace TaleWorlds.CampaignSystem;", "public class Hero { }" })
+        });
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
+        index.EnsureBuilt("root");
+
+        var result = index.FindFullyQualifiedNames("Hero");
+
+        Assert.Equal(new[] { "TaleWorlds.CampaignSystem.Hero" }, result);
+    }
+
+    [Fact]
+    public void FindFullyQualifiedNames_ReturnsAllMatches_WhenSimpleNameIsAmbiguous()
+    {
+        var fs = MakeFs("root", new[]
+        {
+            ("root/A.cs", new[] { "namespace TaleWorlds.CampaignSystem;", "public class Settlement { }" }),
+            ("root/B.cs", new[] { "namespace TaleWorlds.Core;", "public class Settlement { }" })
+        });
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
+        index.EnsureBuilt("root");
+
+        var result = index.FindFullyQualifiedNames("Settlement");
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains("TaleWorlds.CampaignSystem.Settlement", result);
+        Assert.Contains("TaleWorlds.Core.Settlement", result);
+    }
+
+    [Fact]
+    public void FindFullyQualifiedNames_ReturnsEmpty_WhenIndexIsEmpty()
+    {
+        var fs = new Mock<IFileSystem>(MockBehavior.Strict);
+        fs.Setup(f => f.DirectoryExists("root")).Returns(false);
+        var index = new InMemoryCodeIndex(fs.Object, NullLogger<InMemoryCodeIndex>.Instance);
+        index.EnsureBuilt("root");
+
+        Assert.Empty(index.FindFullyQualifiedNames("Hero"));
+    }
 }

@@ -49,11 +49,51 @@ public class GetBannerlordClassUseCaseTests
     {
         var index = new Mock<ICodeIndex>(MockBehavior.Strict);
         index.Setup(ci => ci.FindClass("NonExistentClass")).Returns((IndexedFile?)null);
+        index.Setup(ci => ci.FindFullyQualifiedNames("NonExistentClass")).Returns(Array.Empty<string>());
         var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
 
         var result = useCase.Execute("NonExistentClass");
 
         Assert.StartsWith("[Error]", result);
+    }
+
+    [Fact]
+    public void Execute_ReturnsClassSource_WhenSimpleNameMatchesExactlyOneClass()
+    {
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
+        index.Setup(ci => ci.FindClass("Hero")).Returns((IndexedFile?)null);
+        index.Setup(ci => ci.FindFullyQualifiedNames("Hero")).Returns(new[] { "TaleWorlds.CampaignSystem.Hero" });
+        index.Setup(ci => ci.FindClass("TaleWorlds.CampaignSystem.Hero"))
+            .Returns(TestHelper.MakeFile("Hero.cs",
+                "namespace TaleWorlds.CampaignSystem",
+                "{",
+                "    public class Hero { }",
+                "}"));
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+
+        var result = useCase.Execute("Hero");
+
+        Assert.DoesNotContain("[Error]", result);
+        Assert.Contains("class Hero", result);
+    }
+
+    [Fact]
+    public void Execute_ReturnsError_WithFullyQualifiedCandidates_WhenSimpleNameIsAmbiguous()
+    {
+        var index = new Mock<ICodeIndex>(MockBehavior.Strict);
+        index.Setup(ci => ci.FindClass("Settlement")).Returns((IndexedFile?)null);
+        index.Setup(ci => ci.FindFullyQualifiedNames("Settlement")).Returns(new[]
+        {
+            "TaleWorlds.CampaignSystem.Settlement",
+            "TaleWorlds.Core.Settlement"
+        });
+        var useCase = new GetBannerlordClassUseCase(index.Object, NullLogger<GetBannerlordClassUseCase>.Instance);
+
+        var result = useCase.Execute("Settlement");
+
+        Assert.StartsWith("[Error]", result);
+        Assert.Contains("TaleWorlds.CampaignSystem.Settlement", result);
+        Assert.Contains("TaleWorlds.Core.Settlement", result);
     }
 
     [Fact]
