@@ -104,6 +104,16 @@ dotnet test --collect:"XPlat Code Coverage"
 
 This project is designed to run as an MCP server. You can configure your IDE or tooling to connect to this server to leverage the Bannerlord code search functionality.
 
+## Versioning & Changelog
+
+This project follows [Semantic Versioning](https://semver.org/). The version number is derived automatically from commit history using [GitVersion](https://gitversion.net/), based on [Conventional Commits](https://www.conventionalcommits.org/) prefixes:
+
+- `fix:` bumps the **patch** version
+- `feat:` bumps the **minor** version
+- `feat!:`, `fix!:`, or a `BREAKING CHANGE` footer bumps the **major** version
+
+On every push to `main`, the CI pipeline determines the next version, publishes the NuGet package, updates [CHANGELOG.md](CHANGELOG.md) (generated with [git-cliff](https://git-cliff.org/) from the commit history, grouped by commit type), tags the release, and publishes a GitHub Release with the generated notes.
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.

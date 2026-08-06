@@ -16,5 +16,9 @@ branches:
 ignore:
   sha: []
 commit-message-incrementing: Enabled
+major-version-bump-message: '^(\w+)(\(.+\))?!:|BREAKING[ -]CHANGE'
+minor-version-bump-message: '^feat(\(.+\))?:'
+patch-version-bump-message: '^fix(\(.+\))?:'
+no-bump-message: '^(docs|style|test|ci|chore|build|refactor)(\(.+\))?:'
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatch
